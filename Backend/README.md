@@ -57,7 +57,7 @@ The Go service runs `AutoMigrate` for the `accounts` table when it starts. Creat
 - Sæt `DISCORD_BOT_TOKEN` i `.env` og inviter botten med både **`bot`** og **`applications.commands`** (ellers virker `/`-kommandoer ikke). Eksempel-URL (erstat `APPLICATION_ID` med bot/app-id fra Discord Developer Portal):  
   `https://discord.com/api/oauth2/authorize?client_id=APPLICATION_ID&permissions=3072&scope=bot%20applications.commands`  
   (`3072` = se kanal + sende beskeder; udvid efter behov.)
-- Worker’en åbner **Gateway** (`Session.Open`), så botten er **online**, og den registrerer slash-kommandoerne **`/udm-rapport`** og **`/udm-hjaelp`**. Rapport-kommandoen poster i den **standardkanal**, I har gemt i integrationen (samme som MQTT-rapporter).
+- Worker’en åbner **Gateway** (`Session.Open`), så botten er **online**, og den registrerer slash-kommandoerne **`/daddy-report`**, **`/daddy-help`** og **`/daddy-skudud`** (shout-out som i frontend-footer med YouTube-link). Rapport-kommandoen poster i den **standardkanal**, I har gemt i integrationen (samme som MQTT-rapporter).
 - Valgfrit: sæt `DISCORD_SLASH_GUILD_ID` i `.env` for at registrere kommandoer kun på én server med det samme (ellers **global** registrering med kort forsinkelse).
 - API-reference: [docs/api.md](UptimeDaddy.API/docs/api.md) (sektion *Discord*).
 

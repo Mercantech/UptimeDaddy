@@ -12,9 +12,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Slash-navne og shoutout-URL matcher frontend footer (App.jsx).
 const (
-	slashRapport = "udm-rapport"
-	slashHjaelp  = "udm-hjaelp"
+	slashReport   = "daddy-report"
+	slashHelp     = "daddy-help"
+	slashSkudUd   = "daddy-skudud"
+	devYouTubeURL = "https://youtu.be/Hbqz2iEZN10?t=248"
 )
 
 func onReadyRegisterSlashCommands(s *discordgo.Session, r *discordgo.Ready) {
@@ -23,12 +26,16 @@ func onReadyRegisterSlashCommands(s *discordgo.Session, r *discordgo.Ready) {
 	appID := r.User.ID
 	cmds := []*discordgo.ApplicationCommand{
 		{
-			Name:        slashRapport,
-			Description: "Send en 24t uptime-rapport til den konfigurerede Discord-kanal (kræver UptimeDaddy-integration)",
+			Name:        slashReport,
+			Description: "Post a 24h uptime summary to the configured default channel (requires UptimeDaddy integration)",
 		},
 		{
-			Name:        slashHjaelp,
-			Description: "Vis UptimeDaddy slash-kommandoer",
+			Name:        slashHelp,
+			Description: "Show UptimeDaddy slash commands",
+		},
+		{
+			Name:        slashSkudUd,
+			Description: "Shout-out to the devs — same as the app footer (YouTube)",
 		},
 	}
 
@@ -37,16 +44,16 @@ func onReadyRegisterSlashCommands(s *discordgo.Session, r *discordgo.Ready) {
 	if guildID != "" {
 		_, err = s.ApplicationCommandBulkOverwrite(appID, guildID, cmds)
 		if err == nil {
-			log.Printf("discord: slash-kommandoer registreret for guild %s (øjeblikkeligt)", guildID)
+			log.Printf("discord: slash commands registered for guild %s (immediate)", guildID)
 		}
 	} else {
 		_, err = s.ApplicationCommandBulkOverwrite(appID, "", cmds)
 		if err == nil {
-			log.Println("discord: slash-kommandoer registreret globalt (kan tage op til ca. 1 time at nå alle servere)")
+			log.Println("discord: slash commands registered globally (may take up to ~1h to appear everywhere)")
 		}
 	}
 	if err != nil {
-		log.Printf("discord: registrering af slash-kommandoer fejlede: %v", err)
+		log.Printf("discord: slash command registration failed: %v", err)
 	}
 }
 
@@ -61,21 +68,24 @@ func newSlashInteractionHandler(pool *pgxpool.Pool) func(*discordgo.Session, *di
 
 		data := i.ApplicationCommandData()
 		switch data.Name {
-		case slashRapport:
-			handleSlashRapport(s, i, pool)
-		case slashHjaelp:
-			handleSlashHjaelp(s, i)
+		case slashReport:
+			handleSlashReport(s, i, pool)
+		case slashHelp:
+			handleSlashHelp(s, i)
+		case slashSkudUd:
+			handleSlashSkudUd(s, i)
 		default:
 			// ukendt — ignorer
 		}
 	}
 }
 
-func handleSlashHjaelp(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func handleSlashHelp(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	msg := "**UptimeDaddy**\n" +
-		"• `/udm-rapport` — genererer en 24t oversigt og poster i den kanal I har sat under integrationen.\n" +
-		"• `/udm-hjaelp` — denne hjælp.\n\n" +
-		"Integration opsættes via UptimeDaddy API (guild- og kanal-id). Botten skal have **Send Messages** i målkanalen."
+		"• `/daddy-report` — 24h summary to your integration default channel.\n" +
+		"• `/daddy-help` — this message.\n" +
+		"• `/daddy-skudud` — shout-out to the devs (YouTube), same as the web app footer.\n\n" +
+		"Configure the integration via the UptimeDaddy API (guild and channel IDs). The bot needs **Send Messages** in the target channel."
 	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -85,12 +95,23 @@ func handleSlashHjaelp(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 }
 
-func handleSlashRapport(s *discordgo.Session, i *discordgo.InteractionCreate, pool *pgxpool.Pool) {
+func handleSlashSkudUd(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	// Samme ordlyd som footer i Frontend/Uptime-Daddy/src/App.jsx ("Skud ud til udviklerne" + youtu.be-link).
+	msg := "[Skud ud til udviklerne](" + devYouTubeURL + ")"
+	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: msg,
+		},
+	})
+}
+
+func handleSlashReport(s *discordgo.Session, i *discordgo.InteractionCreate, pool *pgxpool.Pool) {
 	if i.GuildID == "" {
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "Denne kommando virker kun i en **server** (guild), hvor UptimeDaddy er tilkoblet.",
+				Content: "This command only works in a **server** where UptimeDaddy is connected.",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
@@ -111,7 +132,7 @@ LIMIT 1`, i.GuildID).Scan(&workspaceID, &defaultCh)
 		_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "Denne Discord-server er ikke (eller ikke korrekt) koblet til UptimeDaddy. Opret integration og standardkanal via API’et først.",
+				Content: "This Discord server is not linked to UptimeDaddy (or the integration is incomplete). Set up the integration and default channel via the API first.",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
@@ -124,27 +145,27 @@ LIMIT 1`, i.GuildID).Scan(&workspaceID, &defaultCh)
 			Flags: discordgo.MessageFlagsEphemeral,
 		},
 	}); err != nil {
-		log.Printf("slash rapport: defer respond: %v", err)
+		log.Printf("slash daddy-report: defer respond: %v", err)
 		return
 	}
 
 	body, err := buildSummaryReport(ctx, pool, workspaceID, nil, 24*time.Hour)
 	if err != nil {
-		editSlashError(s, i, fmt.Sprintf("Kunne ikke bygge rapport: %v", err))
+		editSlashError(s, i, fmt.Sprintf("Could not build report: %v", err))
 		return
 	}
 
-	hdr := fmt.Sprintf("**Slash-rapport** (workspace %d)\n\n", workspaceID)
+	hdr := fmt.Sprintf("**Slash report** (workspace %d)\n\n", workspaceID)
 	full := hdr + body
 	if err := sendDiscordMessage(s, strings.TrimSpace(defaultCh), full); err != nil {
-		editSlashError(s, i, fmt.Sprintf("Kunne ikke poste i kanalen: %v", err))
+		editSlashError(s, i, fmt.Sprintf("Could not post to the channel: %v", err))
 		return
 	}
 
-	confirm := fmt.Sprintf("Rapporten er sendt i <#%s>.", strings.TrimSpace(defaultCh))
+	confirm := fmt.Sprintf("Report posted in <#%s>.", strings.TrimSpace(defaultCh))
 	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{Content: strPtr(confirm)})
 	if err != nil {
-		log.Printf("slash rapport: edit response: %v", err)
+		log.Printf("slash daddy-report: edit response: %v", err)
 	}
 }
 
@@ -154,7 +175,7 @@ func editSlashError(s *discordgo.Session, i *discordgo.InteractionCreate, msg st
 	}
 	_, err := s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{Content: strPtr(msg)})
 	if err != nil {
-		log.Printf("slash fejl-edit: %v", err)
+		log.Printf("slash error edit: %v", err)
 	}
 }
 

@@ -114,7 +114,8 @@ Manuel rapport (sender MQTT til Discord worker).
 
 Når **discord-worker** kører med Gateway, registreres globale (eller guild-specifikke med `DISCORD_SLASH_GUILD_ID`) kommandoer:
 
-- `/udm-rapport` — 24t oversigt til integrationens **standardkanal** (kræver opsat `guild_id` + kanal i API).
-- `/udm-hjaelp` — kort hjælp.
+- `/daddy-report` — 24h summary to the integration **default channel** (requires `guild_id` + channel in the API).
+- `/daddy-help` — short help.
+- `/daddy-skudud` — same shout-out + YouTube link as the web app footer (`App.jsx`).
 
 Inviter botten med scope **`applications.commands`** (se Backend README).
