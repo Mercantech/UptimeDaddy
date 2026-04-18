@@ -2,6 +2,7 @@ package discordworker
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/url"
 	"strings"
@@ -20,6 +21,16 @@ type reportSiteRow struct {
 	URL      string
 	Checks   int64
 	UpChecks int64
+	// Gennemsnit af total_time_ms for alle checks i vinduet (nil hvis ingen målinger).
+	AvgTotalMs *float64
+	// Seneste måling i vinduet — samme felter som dashboard / TimingCell (curl-kumulative ms).
+	LastStatus      *int32
+	LastDNSMs       *float64
+	LastConnectMs   *float64
+	LastTLSMs       *float64
+	LastTTFBMs      *float64
+	LastTotalMs     *float64
+	LastCheckAt     *time.Time
 }
 
 func querySummaryReportRows(
@@ -36,22 +47,58 @@ func querySummaryReportRows(
 		const q = `
 SELECT w.id, w.url,
   COUNT(m.id)::bigint AS checks,
-  COALESCE(SUM(CASE WHEN m.status_code >= 200 AND m.status_code < 300 THEN 1 ELSE 0 END), 0)::bigint AS up_checks
+  COALESCE(SUM(CASE WHEN m.status_code >= 200 AND m.status_code < 300 THEN 1 ELSE 0 END), 0)::bigint AS up_checks,
+  AVG(m.total_time_ms) FILTER (WHERE m.id IS NOT NULL) AS avg_total_ms,
+  lm.status_code,
+  lm.dns_lookup_ms,
+  lm.connect_ms,
+  lm.tls_handshake_ms,
+  lm.time_to_first_byte_ms,
+  lm.total_time_ms,
+  lm.created_at
 FROM websites w
 LEFT JOIN measurements m ON m.website_id = w.id AND m.created_at >= $1
+LEFT JOIN LATERAL (
+  SELECT m2.status_code, m2.dns_lookup_ms, m2.connect_ms, m2.tls_handshake_ms,
+         m2.time_to_first_byte_ms, m2.total_time_ms, m2.created_at
+  FROM measurements m2
+  WHERE m2.website_id = w.id AND m2.created_at >= $1
+  ORDER BY m2.created_at DESC
+  LIMIT 1
+) lm ON TRUE
 WHERE w.user_id = $2
-GROUP BY w.id, w.url
+GROUP BY w.id, w.url,
+  lm.status_code, lm.dns_lookup_ms, lm.connect_ms, lm.tls_handshake_ms,
+  lm.time_to_first_byte_ms, lm.total_time_ms, lm.created_at
 ORDER BY w.id`
 		rows, err = pool.Query(ctx, q, from, userID)
 	} else {
 		const q = `
 SELECT w.id, w.url,
   COUNT(m.id)::bigint AS checks,
-  COALESCE(SUM(CASE WHEN m.status_code >= 200 AND m.status_code < 300 THEN 1 ELSE 0 END), 0)::bigint AS up_checks
+  COALESCE(SUM(CASE WHEN m.status_code >= 200 AND m.status_code < 300 THEN 1 ELSE 0 END), 0)::bigint AS up_checks,
+  AVG(m.total_time_ms) FILTER (WHERE m.id IS NOT NULL) AS avg_total_ms,
+  lm.status_code,
+  lm.dns_lookup_ms,
+  lm.connect_ms,
+  lm.tls_handshake_ms,
+  lm.time_to_first_byte_ms,
+  lm.total_time_ms,
+  lm.created_at
 FROM websites w
 LEFT JOIN measurements m ON m.website_id = w.id AND m.created_at >= $1
+LEFT JOIN LATERAL (
+  SELECT m2.status_code, m2.dns_lookup_ms, m2.connect_ms, m2.tls_handshake_ms,
+         m2.time_to_first_byte_ms, m2.total_time_ms, m2.created_at
+  FROM measurements m2
+  WHERE m2.website_id = w.id AND m2.created_at >= $1
+  ORDER BY m2.created_at DESC
+  LIMIT 1
+) lm ON TRUE
 WHERE w.user_id = $2 AND w.id = ANY($3::bigint[])
-GROUP BY w.id, w.url
+GROUP BY w.id, w.url,
+  lm.status_code, lm.dns_lookup_ms, lm.connect_ms, lm.tls_handshake_ms,
+  lm.time_to_first_byte_ms, lm.total_time_ms, lm.created_at
 ORDER BY w.id`
 		rows, err = pool.Query(ctx, q, from, userID, websiteIDs)
 	}
@@ -63,8 +110,48 @@ ORDER BY w.id`
 	var out []reportSiteRow
 	for rows.Next() {
 		var r reportSiteRow
-		if err := rows.Scan(&r.ID, &r.URL, &r.Checks, &r.UpChecks); err != nil {
+		var avgTotal sql.NullFloat64
+		var lastStatus sql.NullInt64
+		var lastDNS, lastConn, lastTLS, lastTTFB, lastTotal sql.NullFloat64
+		var lastAt sql.NullTime
+		if err := rows.Scan(
+			&r.ID, &r.URL, &r.Checks, &r.UpChecks,
+			&avgTotal,
+			&lastStatus, &lastDNS, &lastConn, &lastTLS, &lastTTFB, &lastTotal, &lastAt,
+		); err != nil {
 			return nil, err
+		}
+		if avgTotal.Valid {
+			v := avgTotal.Float64
+			r.AvgTotalMs = &v
+		}
+		if lastStatus.Valid {
+			v := int32(lastStatus.Int64)
+			r.LastStatus = &v
+		}
+		if lastDNS.Valid {
+			v := lastDNS.Float64
+			r.LastDNSMs = &v
+		}
+		if lastConn.Valid {
+			v := lastConn.Float64
+			r.LastConnectMs = &v
+		}
+		if lastTLS.Valid {
+			v := lastTLS.Float64
+			r.LastTLSMs = &v
+		}
+		if lastTTFB.Valid {
+			v := lastTTFB.Float64
+			r.LastTTFBMs = &v
+		}
+		if lastTotal.Valid {
+			v := lastTotal.Float64
+			r.LastTotalMs = &v
+		}
+		if lastAt.Valid {
+			t := lastAt.Time.UTC()
+			r.LastCheckAt = &t
 		}
 		out = append(out, r)
 	}
@@ -131,11 +218,33 @@ func embedFieldName(emoji, label string) string {
 	return s
 }
 
-func embedFieldValue(uptimePct float64, upChecks, checks, id int64) string {
-	s := fmt.Sprintf(
+func embedFieldValue(r reportSiteRow, uptimePct float64) string {
+	var b strings.Builder
+	fmt.Fprintf(&b,
 		"**%.1f%%** uptime · `%d` / `%d` checks · id `%d`",
-		uptimePct, upChecks, checks, id,
+		uptimePct, r.UpChecks, r.Checks, r.ID,
 	)
+	if r.Checks > 0 && r.AvgTotalMs != nil {
+		fmt.Fprintf(&b, "\nGns. **%.0f ms** total (%d checks i vinduet)", *r.AvgTotalMs, r.Checks)
+	}
+	if r.LastTotalMs != nil && r.LastCheckAt != nil {
+		st := "-"
+		if r.LastStatus != nil {
+			st = fmt.Sprintf("%d", *r.LastStatus)
+		}
+		fmt.Fprintf(&b, "\n**Seneste:** %s UTC · HTTP `%s` · **%.0f ms** total",
+			r.LastCheckAt.UTC().Format("02.01.2006 15:04"), st, *r.LastTotalMs,
+		)
+		if r.LastDNSMs != nil && r.LastConnectMs != nil && r.LastTLSMs != nil && r.LastTTFBMs != nil {
+			fmt.Fprintf(&b,
+				"\n· DNS `%.0f` · forb. `%.0f` · TLS `%.0f` · TTFB `%.0f` _(kumulativ, som dashboard)_",
+				*r.LastDNSMs, *r.LastConnectMs, *r.LastTLSMs, *r.LastTTFBMs,
+			)
+		}
+	} else if r.Checks == 0 {
+		b.WriteString("\n_Ingen målinger i vinduet._")
+	}
+	s := b.String()
 	if len(s) > 1024 {
 		s = s[:1021] + "…"
 	}
@@ -151,7 +260,7 @@ func buildSummaryEmbeds(
 	userID int64,
 ) []*discordgo.MessageEmbed {
 	meta := fmt.Sprintf(
-		"Sidste **%s** · UTC · workspace `%d`",
+		"Sidste **%s** · UTC · workspace `%d`\n_Seneste_ = nyeste check i vinduet (samme tal som tabellen). _Gns._ = gennemsnitlig totaltid for alle checks i vinduet.",
 		formatDurationHuman(window),
 		userID,
 	)
@@ -185,7 +294,7 @@ func buildSummaryEmbeds(
 			nameEm := strings.TrimSpace(strings.TrimSpace(EmojiFavicon()) + " " + em)
 			fields = append(fields, &discordgo.MessageEmbedField{
 				Name:   embedFieldName(nameEm, shortSiteLabel(r.URL)),
-				Value:  embedFieldValue(uptimePct, r.UpChecks, r.Checks, r.ID),
+				Value:  embedFieldValue(r, uptimePct),
 				Inline: true,
 			})
 		}
