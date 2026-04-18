@@ -143,7 +143,7 @@ function App() {
 							marginBottom: "0.65rem",
 						}}
 					>
-						Skud ud til frontend-holdet
+						Skud ud til udviklerne
 					</div>
 					<div
 						style={{
@@ -187,7 +187,6 @@ function App() {
 							}}
 							title="Hvis denne ikke matcher efter deploy, får browseren/CDN stadig en gammel bundle."
 						>
-							Frontend-udgave: {import.meta.env.VITE_BUILD_ID}
 						</div>
 					) : null}
 				</footer>
