@@ -62,28 +62,33 @@ function MonitorModal({ monitor, onClose, onDataChanged }) {
   };
 
   const handleUpdate = async (website, newTime) => {
+    const interval = Math.max(1, Math.floor(Number(newTime)));
+    if (!Number.isFinite(interval)) {
+      return;
+    }
+
     setLoading(true);
-    const payload = { intervalTime: String(newTime) };
     let updateSucceeded = false;
 
     try {
       await fetchCall({
         url: `${API_URL}/Websites/${website.id}/interval`,
         method: "PUT",
-        body: payload,
+        body: { intervalTime: interval },
       });
 
-      setEditTime(newTime);
+      setEditTime(interval);
       updateSucceeded = true;
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      onDataChanged?.();
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      onClose();
+    } catch (e) {
+      console.error(e);
+      window.alert(
+        `Kunne ikke gemme interval: ${e?.message ?? e}\n\n(Tjek at du er logget ind, og at API accepterer heltal sekunder.)`
+      );
     } finally {
       setLoading(false);
-      onClose();
-      if (updateSucceeded) {
-        onDataChanged?.();
-      }
-
     }
   };
 

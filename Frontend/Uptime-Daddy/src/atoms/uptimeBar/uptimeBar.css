@@ -3,6 +3,34 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
+  flex-wrap: wrap;
+}
+
+.uptime-bar__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.uptime-bar__percent {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.uptime-bar__percent--ok {
+  color: #6ee7b7;
+}
+
+.uptime-bar__percent--bad {
+  color: #fca5a5;
+}
+
+.uptime-bar__percent--muted {
+  color: #64748b;
+  font-weight: 600;
 }
 
 .uptime-bar--empty {
