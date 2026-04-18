@@ -93,4 +93,12 @@ bundle install
 bundle exec rspec
 ```
 
+Hvis `Gemfile.lock` er ude af sync med RubyGems (Bundler exit 41), regenerér den **på en maskine med Ruby**:
+
+```bash
+cd http_requester
+bundle lock
+bundle install
+```
+
 CI: workflow **CI · Ruby HTTP worker (RSpec)** (`.github/workflows/ci-http-requester-ruby.yml`) kører ved push/PR når `HTTP/http_requester/` ændres.
