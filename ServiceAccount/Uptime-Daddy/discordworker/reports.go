@@ -210,6 +210,12 @@ func shortSiteLabel(raw string) string {
 	return host
 }
 
+// formatUptimePctDiscord: høj præcision (fire decimaler); komma som decimalseparator som i dansk UI.
+func formatUptimePctDiscord(pct float64) string {
+	s := fmt.Sprintf("%.4f", pct)
+	return strings.Replace(s, ".", ",", 1)
+}
+
 func embedFieldName(emoji, label string) string {
 	s := emoji + " " + label
 	if len(s) > 256 {
@@ -220,31 +226,45 @@ func embedFieldName(emoji, label string) string {
 
 func embedFieldValue(r reportSiteRow, uptimePct float64) string {
 	var b strings.Builder
-	fmt.Fprintf(&b,
-		"**%.1f%%** uptime · `%d` / `%d` checks · id `%d`",
-		uptimePct, r.UpChecks, r.Checks, r.ID,
-	)
-	if r.Checks > 0 && r.AvgTotalMs != nil {
-		fmt.Fprintf(&b, "\nGns. **%.0f ms** total (%d checks i vinduet)", *r.AvgTotalMs, r.Checks)
+	ln := func(format string, args ...interface{}) {
+		fmt.Fprintf(&b, format, args...)
+		b.WriteString("\n")
 	}
+	gap := func() { b.WriteString("\n") }
+
+	ln("**%s%%** oppe", formatUptimePctDiscord(uptimePct))
+	gap()
+	ln("`%d` / `%d` checks", r.UpChecks, r.Checks)
+	ln("id `%d`", r.ID)
+	gap()
+
+	if r.Checks > 0 && r.AvgTotalMs != nil {
+		ln("**Gns. total:** `%.0f` ms", *r.AvgTotalMs)
+		gap()
+	}
+
 	if r.LastTotalMs != nil && r.LastCheckAt != nil {
 		st := "-"
 		if r.LastStatus != nil {
 			st = fmt.Sprintf("%d", *r.LastStatus)
 		}
-		fmt.Fprintf(&b, "\n**Seneste:** %s UTC · HTTP `%s` · **%.0f ms** total",
-			r.LastCheckAt.UTC().Format("02.01.2006 15:04"), st, *r.LastTotalMs,
-		)
+		ln("**Seneste check**")
+		ln("`%s` UTC", r.LastCheckAt.UTC().Format("02.01.2006 15:04"))
+		ln("HTTP `%s`", st)
+		ln("Total: **`%.0f` ms**", *r.LastTotalMs)
 		if r.LastDNSMs != nil && r.LastConnectMs != nil && r.LastTLSMs != nil && r.LastTTFBMs != nil {
-			fmt.Fprintf(&b,
-				"\n· DNS `%.0f` · forb. `%.0f` · TLS `%.0f` · TTFB `%.0f` _(kumulativ, som dashboard)_",
-				*r.LastDNSMs, *r.LastConnectMs, *r.LastTLSMs, *r.LastTTFBMs,
-			)
+			gap()
+			ln("_Kumulative ms (som i dashboard)_")
+			ln("DNS `%.0f`", *r.LastDNSMs)
+			ln("Forb. `%.0f`", *r.LastConnectMs)
+			ln("TLS `%.0f`", *r.LastTLSMs)
+			ln("TTFB `%.0f`", *r.LastTTFBMs)
 		}
 	} else if r.Checks == 0 {
-		b.WriteString("\n_Ingen målinger i vinduet._")
+		ln("_Ingen målinger i vinduet._")
 	}
-	s := b.String()
+
+	s := strings.TrimSpace(b.String())
 	if len(s) > 1024 {
 		s = s[:1021] + "…"
 	}
@@ -260,7 +280,9 @@ func buildSummaryEmbeds(
 	userID int64,
 ) []*discordgo.MessageEmbed {
 	meta := fmt.Sprintf(
-		"Sidste **%s** · UTC · workspace `%d`\n_Seneste_ = nyeste check i vinduet (samme tal som tabellen). _Gns._ = gennemsnitlig totaltid for alle checks i vinduet.",
+		"**Vindue:** %s UTC · workspace `%d`\n\n"+
+			"• **Seneste** — nyeste måling i perioden (samme tal som tabellen)\n"+
+			"• **Gns. total** — middel af total-tid for alle checks i perioden",
 		formatDurationHuman(window),
 		userID,
 	)
@@ -291,11 +313,10 @@ func buildSummaryEmbeds(
 				uptimePct = (float64(r.UpChecks) / float64(r.Checks)) * 100
 			}
 			em := uptimeStatusEmoji(uptimePct)
-			nameEm := strings.TrimSpace(strings.TrimSpace(EmojiFavicon()) + " " + em)
 			fields = append(fields, &discordgo.MessageEmbedField{
-				Name:   embedFieldName(nameEm, shortSiteLabel(r.URL)),
+				Name:   embedFieldName(em, shortSiteLabel(r.URL)),
 				Value:  embedFieldValue(r, uptimePct),
-				Inline: true,
+				Inline: false,
 			})
 		}
 

@@ -11,23 +11,6 @@ import Loader from "../../atoms/loader/loader.jsx";
 import { formatIntervalSeconds } from "../../util/durationFormat.js";
 
 /** API returnerer ældste først; UI forventer nyeste først (som /with-measurements). */
-function DiscordGlyph({ size = 24 }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      aria-hidden
-      style={{ display: "block" }}
-    >
-      <path
-        fill="currentColor"
-        d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"
-      />
-    </svg>
-  );
-}
-
 function normalizeMeasurementsFromApi(rows) {
   const asc = Array.isArray(rows) ? rows : [];
   const desc = [...asc].reverse();
@@ -402,30 +385,24 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
               </div>
             </div>
 
-            <div className="monitor-modal-discord">
+            <div className="monitor-modal-discord monitor-modal-discord--compact">
               <div className="monitor-modal-discord__accent" aria-hidden />
               <div className="monitor-modal-discord__inner">
-                <div className="monitor-modal-discord__header">
-                  <div className="monitor-modal-discord__icon-wrap">
-                    <DiscordGlyph size={26} />
-                  </div>
-                  <div className="monitor-modal-discord__title-block">
-                    <h3 className="monitor-modal-discord__title">Discord-alarm</h3>
-                    <div className="monitor-modal-discord__badges">
-                      <span className="monitor-modal-discord__badge">Nedetid</span>
-                      <span className="monitor-modal-discord__badge">Genoprettet</span>
-                      <span className="monitor-modal-discord__badge monitor-modal-discord__badge--muted">
-                        Valgfri kanal
-                      </span>
-                    </div>
+                <div className="monitor-modal-discord__top">
+                  <h3 className="monitor-modal-discord__title">Discord-alarm</h3>
+                  <div className="monitor-modal-discord__badges">
+                    <span className="monitor-modal-discord__badge">Nedetid</span>
+                    <span className="monitor-modal-discord__badge">Genoprettet</span>
+                    <span className="monitor-modal-discord__badge monitor-modal-discord__badge--muted">
+                      Valgfri kanal
+                    </span>
                   </div>
                 </div>
 
                 <p className="monitor-modal-discord__hint">
-                  Ved statusskift til <strong>ikke oppe</strong> og når servicen er{" "}
-                  <strong>oppe igen</strong>, kan Uptime Daddy poste i Discord — hvis alarmen er aktiv
-                  og{" "}
-                  <Link to="/settings" style={{ color: "#7dffc8" }}>
+                  Ved statusskift til <strong>ikke oppe</strong> og når servicen er <strong>oppe igen</strong>,
+                  kan Uptime Daddy poste i Discord — hvis alarmen er aktiv og{" "}
+                  <Link to="/settings" className="monitor-modal-discord__hint-link">
                     integrationen
                   </Link>{" "}
                   under Settings er udfyldt.
@@ -445,7 +422,7 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
                           label=" "
                           checked={notifEnabled}
                           onChange={(_, d) => setNotifEnabled(Boolean(d.checked))}
-                          aria-label="Discord-alarm: besked ved fejl og når monitoren er sund igen"
+                          aria-label="Slå Discord-alarm til eller fra"
                         />
                       </div>
                       <p
@@ -460,7 +437,7 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
                         role="button"
                         tabIndex={0}
                       >
-                        Send besked til Discord ved fejl og når monitoren er sund igen
+                        Alarm til Discord
                       </p>
                     </div>
 
@@ -477,8 +454,7 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
                         style={{ maxWidth: "100%" }}
                       />
                       <span className="monitor-modal-discord__field-hint">
-                        Valgfrit. Lad feltet være tomt for at bruge den kanal, du har sat under Settings →
-                        Discord.
+                        Tom = standardkanal fra Settings.
                       </span>
                     </div>
                   </>

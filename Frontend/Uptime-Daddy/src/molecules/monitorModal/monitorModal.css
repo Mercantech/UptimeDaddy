@@ -1,15 +1,16 @@
-/* Discord-alarm: høj kontrast + tydelig hierarki (matcher mørk teal-dashboard) */
+/* Discord-alarm — kompakt blok (én “tæthed” som titel + badges + kort brødtekst) */
 
 .monitor-modal-discord {
   position: relative;
-  margin-bottom: 1.25rem;
-  border-radius: 12px;
+  margin-bottom: 1rem;
+  border-radius: 8px;
   border: 1px solid #2f6d59;
-  background: linear-gradient(145deg, #0c221e 0%, #0b1d19 45%, #0a1816 100%);
-  box-shadow:
-    0 0 0 1px rgba(64, 138, 113, 0.12),
-    0 8px 28px rgba(0, 0, 0, 0.35);
+  background: #0b1d19;
   overflow: hidden;
+}
+
+.monitor-modal-discord--compact {
+  box-shadow: none;
 }
 
 .monitor-modal-discord__accent {
@@ -17,44 +18,27 @@
   left: 0;
   top: 0;
   bottom: 0;
-  width: 5px;
-  background: linear-gradient(180deg, #5865f2 0%, #408a71 55%, #2f6d59 100%);
-  border-radius: 12px 0 0 12px;
+  width: 3px;
+  background: linear-gradient(180deg, #5865f2 0%, #408a71 100%);
+  border-radius: 8px 0 0 8px;
 }
 
 .monitor-modal-discord__inner {
   position: relative;
-  padding: 1rem 1.1rem 1.1rem 1.35rem;
+  padding: 0.65rem 0.85rem 0.7rem 1rem;
 }
 
-.monitor-modal-discord__header {
+.monitor-modal-discord__top {
   display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
-  margin-bottom: 0.75rem;
-}
-
-.monitor-modal-discord__icon-wrap {
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: linear-gradient(145deg, #5865f2 0%, #4752c4 100%);
-  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(88, 101, 242, 0.35);
-}
-
-.monitor-modal-discord__title-block {
-  flex: 1;
-  min-width: 0;
+  gap: 0.45rem 0.6rem;
+  margin-bottom: 0.35rem;
 }
 
 .monitor-modal-discord__title {
-  margin: 0 0 0.2rem;
-  font-size: 1.05rem;
+  margin: 0;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #c5ebe0;
   letter-spacing: 0.02em;
@@ -63,56 +47,61 @@
 .monitor-modal-discord__badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.35rem;
+  gap: 0.3rem;
 }
 
 .monitor-modal-discord__badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 6px;
-  font-size: 0.72rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-  background: rgba(64, 138, 113, 0.2);
+  background: rgba(64, 138, 113, 0.18);
   color: #b0e4cc;
-  border: 1px solid rgba(47, 109, 89, 0.65);
+  border: 1px solid rgba(47, 109, 89, 0.5);
 }
 
 .monitor-modal-discord__badge--muted {
-  background: rgba(9, 20, 19, 0.85);
+  background: rgba(9, 20, 19, 0.9);
   color: #8fb8a8;
 }
 
 .monitor-modal-discord__hint {
-  margin: 0 0 1rem;
-  font-size: 0.84rem;
-  line-height: 1.55;
+  margin: 0 0 0.55rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
   color: #a8d4c4;
 }
 
 .monitor-modal-discord__hint strong {
   color: #e8fff6;
-}
-
-.monitor-modal-discord__hint a {
   font-weight: 600;
 }
 
-/* Toggle + tekst i to kolonner — undgår overlap og Sort tekst fra .ui.modal > .content */
+.monitor-modal-discord__hint-link {
+  color: #7dffc8 !important;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.monitor-modal-discord__hint-link:hover {
+  color: #b0ffe0 !important;
+}
+
 .monitor-modal-discord__toggle-row {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 1rem;
-  padding: 0.85rem 1rem;
-  margin-bottom: 1rem;
-  border-radius: 10px;
-  background: rgba(9, 20, 19, 0.75);
-  border: 1px solid rgba(47, 109, 89, 0.55);
+  gap: 0.65rem;
+  padding: 0.5rem 0.65rem;
+  margin-bottom: 0.55rem;
+  border-radius: 6px;
+  background: rgba(9, 20, 19, 0.65);
+  border: 1px solid rgba(47, 109, 89, 0.45);
 }
 
 .monitor-modal-discord__toggle-rail {
@@ -121,20 +110,19 @@
 
 .monitor-modal-discord__toggle-rail .ui.toggle.checkbox {
   width: auto;
-  min-height: 1.5rem;
+  min-height: 1.35rem;
 }
 
-/* Skjul evt. tekst i toggle-label uden at skalere ::before (undgå font-size: 0) */
 .monitor-modal-discord__toggle-rail .ui.toggle.checkbox label {
   position: relative;
   display: inline-block;
   text-indent: -9999px;
   overflow: visible;
-  width: 3.75rem;
-  min-height: 1.5rem;
+  width: 3.5rem;
+  min-height: 1.35rem;
   padding: 0 !important;
   margin: 0 !important;
-  line-height: 1.5rem;
+  line-height: 1.35rem;
   color: transparent !important;
 }
 
@@ -154,9 +142,9 @@
   min-width: 0;
   color: #e8fff6 !important;
   -webkit-text-fill-color: #e8fff6 !important;
-  font-size: 0.92rem !important;
+  font-size: 0.84rem !important;
   font-weight: 500 !important;
-  line-height: 1.45 !important;
+  line-height: 1.35 !important;
   cursor: pointer;
   user-select: none;
 }
@@ -174,25 +162,28 @@
 
 .monitor-modal-discord__field-label {
   display: block;
-  margin-bottom: 0.45rem;
-  font-size: 0.86rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #b0e4cc;
 }
 
 .monitor-modal-discord__field-hint {
   display: block;
-  margin-top: 0.35rem;
-  font-size: 0.76rem;
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
   color: #8fb8a8;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .monitor-modal-discord__input.ui.input > input {
   background: #091413 !important;
   color: #e8fff6 !important;
   border: 1px solid #2f6d59 !important;
-  border-radius: 8px !important;
+  border-radius: 6px !important;
+  font-size: 0.85rem !important;
+  padding-top: 0.55rem !important;
+  padding-bottom: 0.55rem !important;
 }
 
 .monitor-modal-discord__input.ui.input > input:focus {
@@ -208,8 +199,8 @@
 .monitor-modal-discord__loading {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   color: #8fb8a8;
-  font-size: 0.86rem;
-  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  margin: 0.35rem 0 0;
 }

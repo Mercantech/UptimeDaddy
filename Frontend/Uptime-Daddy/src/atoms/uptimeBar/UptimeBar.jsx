@@ -27,7 +27,7 @@ function UptimeBar({ measurements = [] }) {
   const pct = computeUptimePercent(measurements);
   const pctLabel =
     pct != null
-      ? `${pct.toLocaleString("da-DK", { maximumFractionDigits: 1, minimumFractionDigits: 0 })}% oppe`
+      ? `${pct.toLocaleString("da-DK", { maximumFractionDigits: 4, minimumFractionDigits: 1 })}% oppe`
       : null;
 
   const segments = useMemo(() => {

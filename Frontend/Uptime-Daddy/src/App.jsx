@@ -62,13 +62,18 @@ function App() {
 			}
 		}
 
-		const uptimePercent = Array.isArray(amountOfMeasurements) && amountOfMeasurements.length > 0
-			? Math.round((totalSitesUp / amountOfMeasurements.length) * 100): 0;
+		const uptimePercentStr =
+			Array.isArray(amountOfMeasurements) && amountOfMeasurements.length > 0
+				? ((totalSitesUp / amountOfMeasurements.length) * 100).toLocaleString("da-DK", {
+						maximumFractionDigits: 4,
+						minimumFractionDigits: 1,
+					})
+				: "0";
 
 		return [
 			{header: amountOfWebsites.length, description: "Active Projects", icon: "circle check"},
 			{header: totalMeasurements, description: "Total Checks", icon: "chart bar"},
-			{header: `${uptimePercent}%`, description: "Uptime %", icon: "chart bar"},
+			{header: `${uptimePercentStr}%`, description: "Uptime %", icon: "chart bar"},
 		];
 	}
 
