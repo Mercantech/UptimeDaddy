@@ -59,5 +59,53 @@ Return the latest measurement for a website.
 - `uptime/measurements` - messages from worker devices containing measurement pages
 - `uptime/ping/requests` - requests for ping preview
 - `uptime/ping/responses` - ping preview responses
+- `uptime/discord/notification_events` - monitor status events til Discord worker (JSON: `MonitorStatusNotificationEventDto`)
+- `uptime/discord/report_requests` - manuelle rapport-anmodninger til Discord worker (JSON: `DiscordReportRequestEventDto`)
 
 Payloads follow the anonymous object shapes used in `MqttPublishService` and `MqttService`.
+
+## Discord (integration)
+
+Konfigurer integration og notifikationer via JWT-beskyttede endpoints under `/api/discord`.
+
+### GET /api/discord/integration
+Returnerer Discord-integration for den aktuelle bruger eller 404.
+
+### PUT /api/discord/integration
+Body:
+
+```json
+{ "guildId": "1234567890", "defaultChannelId": "1234567890", "enabled": true }
+```
+
+### PUT /api/discord/websites/{websiteId}/notifications
+Aktiverer notifikationer pr. monitor (påkrævet for at få DOWN/RECOVERED alerts). Valgfri kanal-override.
+
+```json
+{ "notificationEnabled": true, "channelIdOverride": null }
+```
+
+### GET /api/discord/report-schedules
+Lister planlagte rapporter.
+
+### POST /api/discord/report-schedules
+
+```json
+{ "channelId": null, "cronExpression": "0 9 * * *", "reportType": "summary", "enabled": true }
+```
+
+`channelId` null betyder standardkanal fra integration.
+
+### PUT /api/discord/report-schedules/{id}
+Opdaterer en plan.
+
+### DELETE /api/discord/report-schedules/{id}
+
+### POST /api/discord/reports/trigger
+Manuel rapport (sender MQTT til Discord worker).
+
+```json
+{ "reportType": "summary", "websiteIds": [1, 2] }
+```
+
+`websiteIds` kan udelades for alle websites for brugeren.

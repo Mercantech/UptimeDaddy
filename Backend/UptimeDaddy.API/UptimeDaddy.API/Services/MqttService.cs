@@ -56,6 +56,7 @@ namespace UptimeDaddy.API.Services
 
                         using var scope = _scopeFactory.CreateScope();
                         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                        var savedBatch = new List<Measurement>();
 
                         foreach (var page in message.Pages)
                         {
@@ -81,10 +82,17 @@ namespace UptimeDaddy.API.Services
                             };
 
                             context.Measurements.Add(measurement);
+                            savedBatch.Add(measurement);
                         }
 
                         await context.SaveChangesAsync(stoppingToken);
                         Console.WriteLine("Measurements saved to database.");
+
+                        if (savedBatch.Count > 0)
+                        {
+                            var alertService = scope.ServiceProvider.GetRequiredService<MonitorStatusAlertService>();
+                            await alertService.ProcessNewMeasurementsAsync(context, savedBatch, stoppingToken);
+                        }
                     }
                     else if (topic == "uptime/ping/responses")
                     {

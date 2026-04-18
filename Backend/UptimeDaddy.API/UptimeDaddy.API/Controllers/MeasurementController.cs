@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UptimeDaddy.API.Data;
+using UptimeDaddy.API.Services;
 
 namespace UptimeDaddy.API.Controllers
 {
@@ -11,10 +12,12 @@ namespace UptimeDaddy.API.Controllers
     public class MeasurementsController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly MonitorStatusAlertService _monitorStatusAlertService;
 
-        public MeasurementsController(AppDbContext context)
+        public MeasurementsController(AppDbContext context, MonitorStatusAlertService monitorStatusAlertService)
         {
             _context = context;
+            _monitorStatusAlertService = monitorStatusAlertService;
         }
 
         [HttpPost]
@@ -30,6 +33,11 @@ namespace UptimeDaddy.API.Controllers
 
             _context.Measurements.Add(measurement);
             await _context.SaveChangesAsync();
+
+            await _monitorStatusAlertService.ProcessNewMeasurementsAsync(
+                _context,
+                new[] { measurement },
+                HttpContext.RequestAborted);
 
             return Ok(measurement);
         }

@@ -85,6 +85,43 @@ services:
       postgres:
         condition: service_healthy
 
+  discord-worker:
+    build:
+      context: ./ServiceAccount
+      dockerfile: Dockerfile
+    command: ["./discord-worker"]
+    ports:
+      - "${DISCORD_WORKER_PUBLISH_PORT:-6970}:6970"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:6970/health",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 25s
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: uptimedaddy
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: uptimedaddy
+      MQTT_HOST: mqtt
+      MQTT_PORT: "1883"
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_WORKER_METRICS_ADDR: ":6970"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mqtt:
+        condition: service_started
+
   http-requester:
     build:
       context: ./HTTP/http_requester

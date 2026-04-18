@@ -27,5 +27,9 @@ namespace UptimeDaddy.API.Models
 
         [Column("faviconbase64")]
         public string? FaviconBase64 { get; set; }
+
+        public DiscordMonitorSubscription? DiscordMonitorSubscription { get; set; }
+
+        public MonitorIncidentState? MonitorIncidentState { get; set; }
     }
 }

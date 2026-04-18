@@ -50,6 +50,13 @@ On startup the API runs `Database.Migrate()` so `websites` / `measurements` (and
 
 The Go service runs `AutoMigrate` for the `accounts` table when it starts. Create an admin user (matching `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`) via `POST /accounts/register` so the Ruby worker can log in and load websites from the API.
 
+### Discord rapport- og notifikationscenter (hybrid)
+
+- **.NET API** gemmer Discord-indstillinger i PostgreSQL, detekterer status-skift på målinger og publicerer events på MQTT (`uptime/discord/*`).
+- **`discord-worker` (Go)** i `docker-compose.yml` læser samme database, abonnerer MQTT, sender beskeder via Discord API, og kører planlagte rapporter (cron i `discord_report_schedules`).
+- Sæt `DISCORD_BOT_TOKEN` i `.env` og inviter botten til serveren med rettighed til at skrive i de valgte kanaler.
+- API-reference: [docs/api.md](UptimeDaddy.API/docs/api.md) (sektion *Discord*).
+
 ### Troubleshooting: `password authentication failed` (28P01) or Ruby `name resolution` for `service-account`
 
 PostgreSQL in Docker only applies `POSTGRES_PASSWORD` when the **data volume is first created**. If you change `.env` later, the cluster still has the old password, so **Go exits** and containers may not register the `service-account` DNS name — the Ruby worker then reports `getaddrinfo: Temporary failure in name resolution`.

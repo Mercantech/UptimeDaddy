@@ -20,5 +20,9 @@ namespace UptimeDaddy.API.Models
         public List<Website> Websites { get; set; } = new();
 
         public List<DashboardBoard> DashboardBoards { get; set; } = new();
+
+        public DiscordIntegration? DiscordIntegration { get; set; }
+
+        public List<DiscordReportSchedule> DiscordReportSchedules { get; set; } = new();
     }
 }
