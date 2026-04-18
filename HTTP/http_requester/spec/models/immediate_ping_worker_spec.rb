@@ -73,7 +73,7 @@ RSpec.describe ImmediatePingWorker do
       instance_double(
         Page,
         path: "example.com",
-        page_id: 1,
+        id: 1,
         user_id: 42
       )
     end

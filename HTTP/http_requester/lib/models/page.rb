@@ -1,5 +1,6 @@
 class Page
-  attr_accessor  :path, :interval_time, :id, :last_ping_time, :user_id, :normalize_path, :have_icon
+  attr_accessor :path, :interval_time, :id, :last_ping_time, :user_id, :normalize_path, :have_icon,
+                :request_id
 
   def initialize(id, path, interval_time, user_id, have_icon = false)
     @id = id
@@ -8,6 +9,7 @@ class Page
     @last_ping_time = Time.now
     @user_id = user_id
     @have_icon = have_icon
+    @request_id = nil
   end
   
   def ready_for_ping?

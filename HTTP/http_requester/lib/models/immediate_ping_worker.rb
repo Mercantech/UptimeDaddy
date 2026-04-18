@@ -44,7 +44,7 @@ class ImmediatePingWorker
     path = page.path.start_with?("https") ? page.path : "https://#{page.path}"
     logger.info("Processing immediate ping for page: #{page.path}")
     curl_response = CurlService.get_hashed_response(path, logger)
-    page_hash = { id: page.page_id, path: page.path, user_id: page.user_id }
+    page_hash = { id: page.id, path: page.path, user_id: page.user_id }
     publish_result.call("uptime/measurements", { pages: [page_hash.merge(response: curl_response)] }.to_json)
     favicon_response = FaradayService.get_favicon(path)
     publish_result.call("uptime/update_favicon", page_hash.merge(favicon: Base64.strict_encode64(favicon_response.body)).to_json)
