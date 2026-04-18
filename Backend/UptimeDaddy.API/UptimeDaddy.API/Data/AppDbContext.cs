@@ -45,6 +45,11 @@ namespace UptimeDaddy.API.Data
                 .HasIndex(b => b.UserId)
                 .HasDatabaseName("ix_dashboard_boards_user_id");
 
+            modelBuilder.Entity<DashboardBoard>()
+                .HasIndex(b => new { b.UserId, b.Name })
+                .IsUnique()
+                .HasDatabaseName("ix_dashboard_boards_user_id_name_unique");
+
             modelBuilder.Entity<DashboardBoardItem>()
                 .HasIndex(i => new { i.DashboardBoardId, i.SortOrder })
                 .HasDatabaseName("ix_dashboard_board_items_board_sort");

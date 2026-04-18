@@ -109,7 +109,7 @@ function DashboardBuilderPage() {
   const boardOptions = boards.map((b) => ({
     key: b.id,
     value: b.id,
-    text: `${b.name} (${b.itemCount ?? 0} sites)`,
+    text: `${b.name} · #${b.id} · ${b.itemCount ?? 0} sites`,
   }));
 
   const toggleWebsite = (websiteId, checked) => {
@@ -142,13 +142,31 @@ function DashboardBuilderPage() {
   };
 
   const createBoard = async () => {
-    const created = await fetchCall({
-      url: `${API_URL}/dashboard-boards`,
-      method: "POST",
-      body: { name: "Nyt board" },
-    });
-    await loadBoards();
-    setSelectedBoardId(created.id);
+    const idCandidate = boardName.trim();
+    if (!idCandidate) {
+      setCopyMsg({
+        negative: true,
+        text: "Indtast et Dashboard-ID (navn) før du opretter — det skal være unikt for din konto.",
+      });
+      return;
+    }
+    setCopyMsg(null);
+    try {
+      const created = await fetchCall({
+        url: `${API_URL}/dashboard-boards`,
+        method: "POST",
+        body: { name: idCandidate },
+      });
+      await loadBoards();
+      setSelectedBoardId(created.id);
+      setCopyMsg({ positive: true, text: `Board "${created.name}" er oprettet.` });
+    } catch (e) {
+      console.error(e);
+      setCopyMsg({
+        negative: true,
+        text: e?.message ?? "Kunne ikke oprette board.",
+      });
+    }
   };
 
   const saveBoard = async () => {
@@ -236,8 +254,48 @@ function DashboardBuilderPage() {
               style={{ backgroundColor: "#0f1f1c", border: "1px solid #2f6d59" }}
             >
               <Form inverted>
+                <div
+                  style={{
+                    marginBottom: "1.35rem",
+                    padding: "1.1rem 1.15rem",
+                    borderRadius: "8px",
+                    border: "2px solid #408A71",
+                    backgroundColor: "#0B1D19",
+                  }}
+                >
+                  <label
+                    style={{
+                      color: "#B0E4CC",
+                      fontSize: "1.05rem",
+                      fontWeight: 700,
+                      display: "block",
+                      marginBottom: "0.35rem",
+                    }}
+                  >
+                    Dashboard-ID (unikt navn)
+                  </label>
+                  <p style={{ color: "#8aa89c", fontSize: "0.88rem", margin: "0 0 0.75rem", lineHeight: 1.45 }}>
+                    Dette er dit boards <strong style={{ color: "#B0E4CC" }}>ID</strong> på din konto (gemmes som små bogstaver).
+                    To boards må ikke have samme ID — API returnerer fejl hvis navnet allerede findes.
+                  </p>
+                  <Input
+                    fluid
+                    size="large"
+                    placeholder="fx produktion, team-a, kunde-demo"
+                    value={boardName}
+                    onChange={(e) => setBoardName(e.target.value)}
+                    style={{ backgroundColor: "#091413", color: "#e8fff6", fontSize: "1.05rem" }}
+                    input={{ style: { color: "#e8fff6", fontWeight: 600 } }}
+                  />
+                  {selectedBoardId ? (
+                    <p style={{ color: "#6d9084", fontSize: "0.82rem", margin: "0.65rem 0 0" }}>
+                      Internt løbenummer (database): <strong style={{ color: "#9bcbb8" }}>#{selectedBoardId}</strong>
+                    </p>
+                  ) : null}
+                </div>
+
                 <Form.Field>
-                  <label style={{ color: "#B0E4CC" }}>Vælg board</label>
+                  <label style={{ color: "#B0E4CC" }}>Vælg eksisterende board</label>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
                     <Dropdown
                       placeholder="Vælg et board…"
@@ -245,10 +303,17 @@ function DashboardBuilderPage() {
                       options={boardOptions}
                       value={selectedBoardId ?? undefined}
                       onChange={(_, { value }) => setSelectedBoardId(value)}
-                      style={{ minWidth: "280px", backgroundColor: "#091413", color: "#e8fff6" }}
+                      style={{ minWidth: "320px", backgroundColor: "#091413", color: "#e8fff6" }}
                     />
-                    <Button type="button" onClick={createBoard} style={{ backgroundColor: "#1F8B68" }}>
-                      <Icon name="plus" /> Nyt board
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setSelectedBoardId(null);
+                        setCopyMsg(null);
+                      }}
+                      style={{ backgroundColor: "#1a3a30", border: "1px solid #2f6d59" }}
+                    >
+                      <Icon name="plus" /> Nyt board (tomt ID-felt)
                     </Button>
                     {selectedBoardId ? (
                       <Button type="button" negative basic onClick={deleteBoard}>
@@ -258,17 +323,18 @@ function DashboardBuilderPage() {
                   </div>
                 </Form.Field>
 
+                {!selectedBoardId ? (
+                  <Button
+                    type="button"
+                    onClick={createBoard}
+                    style={{ backgroundColor: "#1F8B68", marginBottom: "1rem" }}
+                  >
+                    <Icon name="check" /> Opret board med dette Dashboard-ID
+                  </Button>
+                ) : null}
+
                 {selectedBoardId ? (
                   <>
-                    <Form.Field>
-                      <label style={{ color: "#B0E4CC" }}>Navn</label>
-                      <Input
-                        value={boardName}
-                        onChange={(e) => setBoardName(e.target.value)}
-                        style={{ backgroundColor: "#091413", color: "#e8fff6" }}
-                        input={{ style: { color: "#e8fff6" } }}
-                      />
-                    </Form.Field>
                     <Form.Field>
                       <Checkbox
                         toggle

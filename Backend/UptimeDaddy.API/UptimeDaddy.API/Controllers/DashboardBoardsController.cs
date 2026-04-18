@@ -28,6 +28,27 @@ namespace UptimeDaddy.API.Controllers
             return !string.IsNullOrWhiteSpace(raw) && long.TryParse(raw, out userId);
         }
 
+        /// <summary>Dashboard-navn bruges som unikt ID pr. bruger (gemmes normaliseret).</summary>
+        private static string NormalizeBoardName(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return string.Empty;
+            return raw.Trim().ToLowerInvariant();
+        }
+
+        private async Task<bool> BoardNameTakenAsync(long userId, string normalizedName, long? excludeBoardId = null)
+        {
+            if (string.IsNullOrEmpty(normalizedName))
+                return false;
+
+            return await _context.DashboardBoards
+                .AsNoTracking()
+                .AnyAsync(b =>
+                    b.UserId == userId
+                    && b.Name == normalizedName
+                    && (!excludeBoardId.HasValue || b.Id != excludeBoardId.Value));
+        }
+
         [HttpGet]
         public async Task<IActionResult> List()
         {
@@ -94,7 +115,13 @@ namespace UptimeDaddy.API.Controllers
             if (!TryGetUserId(out var userId))
                 return Unauthorized("Kunne ikke finde bruger-id i token.");
 
-            var name = string.IsNullOrWhiteSpace(dto?.Name) ? "Nyt board" : dto!.Name.Trim();
+            var name = NormalizeBoardName(dto?.Name);
+            if (string.IsNullOrEmpty(name))
+                return BadRequest(new { message = "Dashboard-ID (navn) er påkrævet og må ikke kun være mellemrum." });
+
+            if (await BoardNameTakenAsync(userId, name))
+                return Conflict(new { message = $"Dashboard-ID \"{name}\" findes allerede. Vælg et andet navn." });
+
             var now = DateTime.UtcNow;
 
             var board = new DashboardBoard
@@ -131,8 +158,9 @@ namespace UptimeDaddy.API.Controllers
             if (dto == null)
                 return BadRequest("Body mangler.");
 
-            if (string.IsNullOrWhiteSpace(dto.Name))
-                return BadRequest("Name er påkrævet.");
+            var name = NormalizeBoardName(dto.Name);
+            if (string.IsNullOrEmpty(name))
+                return BadRequest(new { message = "Dashboard-ID (navn) er påkrævet og må ikke kun være mellemrum." });
 
             var board = await _context.DashboardBoards
                 .Include(b => b.Items)
@@ -140,6 +168,9 @@ namespace UptimeDaddy.API.Controllers
 
             if (board == null)
                 return NotFound("Board blev ikke fundet.");
+
+            if (await BoardNameTakenAsync(userId, name, board.Id))
+                return Conflict(new { message = $"Dashboard-ID \"{name}\" findes allerede. Vælg et andet navn." });
 
             var itemDtos = dto.Items ?? new List<DashboardBoardItemUpdateDto>();
             var websiteIds = itemDtos.Select(i => i.WebsiteId).Distinct().ToList();
@@ -158,7 +189,7 @@ namespace UptimeDaddy.API.Controllers
                     return BadRequest("Et eller flere websites tilhører ikke dig.");
             }
 
-            board.Name = dto.Name.Trim();
+            board.Name = name;
             board.IsPublished = dto.IsPublished;
             board.UpdatedAt = DateTime.UtcNow;
 

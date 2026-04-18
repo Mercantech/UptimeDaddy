@@ -93,7 +93,16 @@ async function fetchCall({ url, method = "GET", body, withAuth = true }) {
   }
 
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    let detail = `Request failed with status ${response.status}`;
+    try {
+      const j = await response.json();
+      if (typeof j?.message === "string") detail = j.message;
+      else if (typeof j?.title === "string") detail = j.title;
+      else if (typeof j?.detail === "string") detail = j.detail;
+    } catch {
+      /* brug detail */
+    }
+    throw new Error(detail);
   }
 
   if (response.status === 204) {
