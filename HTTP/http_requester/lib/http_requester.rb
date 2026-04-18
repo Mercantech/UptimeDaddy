@@ -72,7 +72,17 @@ class HttpRequester
     accounts_host = legacy_host if accounts_host.nil? || accounts_host.strip.empty?
     api_host = ENV["API_HOST"]
     api_host = legacy_host if api_host.nil? || api_host.strip.empty?
-    response = FaradayService.get_bearer_token("http://#{accounts_host}:#{ENV['PORT_ACCOUNT']}/accounts/login")
+    login_url = "http://#{accounts_host}:#{ENV['PORT_ACCOUNT']}/accounts/login"
+    response = FaradayService.get_bearer_token(login_url)
+    unless response.success?
+      logger.error(
+        "Admin login failed: HTTP #{response.status} from #{login_url}. " \
+        "Sæt ADMIN_EMAIL og ADMIN_PASSWORD til præcis samme bruger som findes i databasen " \
+        "(opret med POST /accounts/register hvis nødvendigt). Body: #{response.body.to_s.strip[0, 300]}"
+      )
+      self.stop = true
+      return
+    end
     token = JSON.parse(response.body).fetch("accessToken")
     api_response = FaradayService.get_response("http://#{api_host}:#{ENV['PORT_WEBSITES']}/api/Websites", token)
     JSON.parse(api_response.body).each do |page|
