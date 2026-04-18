@@ -54,7 +54,7 @@ Return the latest measurement for a website.
 
 ## Incidents (statusskift-log)
 
-Poster oprettes når en måling ændrer tilstand fra «oppe» til «nede» eller omvendt (`MonitorStatusAlertService`). Historik før migration/deploy findes ikke i denne log.
+Poster oprettes når en måling ændrer tilstand fra «oppe» til «nede» eller omvendt (`MonitorStatusAlertService`), og ved **første måling** hvis sitet straks er «nede» (så nedbrud ikke mangler indtil genoprettelse). Historik før migration/deploy findes ikke i denne log.
 
 ### GET /api/incidents
 
@@ -63,6 +63,7 @@ Query parametre:
 | Parameter   | Beskrivelse |
 |------------|--------------|
 | `websiteId` | Valgfrit: kun hændelser for dette website (403 hvis ikke ejet af bruger). |
+| `kind`      | Valgfrit: `down` (kun nedbrud / `isUp: false`), `up` (kun genoprettelse), udeladt = alle. |
 | `page`      | Side, default 1. |
 | `pageSize`  | 1–100, default 50. |
 

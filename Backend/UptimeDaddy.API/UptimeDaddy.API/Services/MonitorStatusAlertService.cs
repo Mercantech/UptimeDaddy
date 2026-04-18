@@ -53,6 +53,20 @@ namespace UptimeDaddy.API.Services
                     LastTransitionAt = DateTime.UtcNow,
                     Initialized = true
                 });
+
+                // Første måling «nede»: log som nedbrud — ellers mangler der en fejl-række indtil første genoprettelse.
+                if (!isUp)
+                {
+                    db.MonitorIncidentEvents.Add(new MonitorIncidentEvent
+                    {
+                        WebsiteId = website.Id,
+                        OccurredAt = DateTime.UtcNow,
+                        IsUp = false,
+                        StatusCode = m.StatusCode,
+                        TotalTimeMs = m.TotalTimeMs
+                    });
+                }
+
                 await db.SaveChangesAsync(cancellationToken);
                 return;
             }

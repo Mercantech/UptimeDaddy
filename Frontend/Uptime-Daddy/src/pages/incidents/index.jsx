@@ -12,8 +12,18 @@ import {
 import Navbar from "../../molecules/navbar/navbar";
 import { getAuthPayload } from "../../util/auth";
 import { API_URL, fetchCall } from "../../util/api.jsx";
+import "./style.css";
 
 const PAGE_SIZE = 25;
+
+/** Tekst for visning — rækken beskriver målingens tilstand ved hændelsen (ned = fejl/overgang til nede). */
+function incidentKindLabel(isUp) {
+    return isUp ? "Genoprettet (oppe igen)" : "Nedbrud registreret";
+}
+
+function incidentKindClass(isUp) {
+    return isUp ? "incident-kind incident-kind--up" : "incident-kind incident-kind--down";
+}
 
 function formatDa(iso) {
     if (!iso) return "—";
@@ -33,6 +43,8 @@ export default function IncidentsPage() {
 
     const [websites, setWebsites] = useState([]);
     const [filterWebsiteId, setFilterWebsiteId] = useState(null);
+    /** «all» | «down» | «up» — nedbrud vs genoprettelse */
+    const [kind, setKind] = useState("all");
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -61,6 +73,7 @@ export default function IncidentsPage() {
             });
             if (filterWebsiteId != null)
                 qs.set("websiteId", String(filterWebsiteId));
+            if (kind && kind !== "all") qs.set("kind", kind);
 
             const data = await fetchCall({
                 url: `${API_URL}/Incidents?${qs.toString()}`,
@@ -72,7 +85,7 @@ export default function IncidentsPage() {
         } finally {
             setLoading(false);
         }
-    }, [userId, page, filterWebsiteId]);
+    }, [userId, page, filterWebsiteId, kind]);
 
     useEffect(() => {
         loadWebsites();
@@ -81,6 +94,15 @@ export default function IncidentsPage() {
     useEffect(() => {
         loadIncidents();
     }, [loadIncidents]);
+
+    const kindOptions = useMemo(
+        () => [
+            { key: "all", value: "all", text: "Alle hændelser" },
+            { key: "down", value: "down", text: "Kun nedbrud (fejl)" },
+            { key: "up", value: "up", text: "Kun genoprettelse" },
+        ],
+        []
+    );
 
     const websiteOptions = useMemo(() => {
         const opts = [{ key: "all", value: "", text: "Alle websites" }];
@@ -101,37 +123,45 @@ export default function IncidentsPage() {
     return (
         <>
             <Navbar />
-            <Container style={{ marginTop: "7rem", padding: "2rem 0" }}>
-                <Header as="h1" style={{ color: "#c5ebe0", marginBottom: "1.25rem" }}>
+            <Container className="incidents-page-container">
+                <Header as="h1" className="incidents-title">
                     Incident-log
                 </Header>
-                <p style={{ color: "#9ec4b8", marginBottom: "1.5rem", maxWidth: "42rem" }}>
-                    Historik over statusskift (op ↔ ned) for dine websites. Oprettes automatisk når en
-                    måling skifter mellem «oppe» og «nede».
+                <p className="incidents-lead">
+                    Hver række er ét registreret skift (&quot;nede&quot; med HTTP-kode ved fejl, eller
+                    &quot;oppe igen&quot;). Vælg <strong>Kun nedbrud (fejl)</strong> for kun fejl med
+                    tidsstempel. Historik før incident-log blev aktiveret kan ikke bagudfyldes.
                 </p>
 
-                <Segment style={{ background: "rgba(14, 36, 32, 0.85)", borderColor: "#2d5c52" }}>
-                    <div
-                        style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: "1rem",
-                            alignItems: "center",
-                            marginBottom: "1rem",
-                        }}
-                    >
-                        <span style={{ color: "#c5ebe0", marginRight: "0.25rem" }}>Filtrér:</span>
-                        <Dropdown
-                            selection
-                            placeholder="Alle websites"
-                            options={websiteOptions}
-                            value={filterWebsiteId ?? ""}
-                            onChange={(_, { value }) => {
-                                setPage(1);
-                                setFilterWebsiteId(value === "" ? null : Number(value));
-                            }}
-                            style={{ minWidth: "16rem" }}
-                        />
+                <Segment className="incidents-panel">
+                    <div className="incidents-toolbar">
+                        <div>
+                            <span className="incidents-filter-label">Hændelsestype</span>
+                            <Dropdown
+                                selection
+                                options={kindOptions}
+                                value={kind}
+                                onChange={(_, { value }) => {
+                                    setPage(1);
+                                    setKind(String(value));
+                                }}
+                                style={{ minWidth: "17rem" }}
+                            />
+                        </div>
+                        <div>
+                            <span className="incidents-filter-label">Website</span>
+                            <Dropdown
+                                selection
+                                placeholder="Alle websites"
+                                options={websiteOptions}
+                                value={filterWebsiteId ?? ""}
+                                onChange={(_, { value }) => {
+                                    setPage(1);
+                                    setFilterWebsiteId(value === "" ? null : Number(value));
+                                }}
+                                style={{ minWidth: "16rem" }}
+                            />
+                        </div>
                     </div>
 
                     {error ? (
@@ -144,7 +174,9 @@ export default function IncidentsPage() {
                         </Loader>
                     ) : items.length === 0 ? (
                         <Message info>
-                            Ingen hændelser endnu — eller intet filter-match.
+                            {kind === "down"
+                                ? "Ingen nedbrud i loggen — eller ingen der matcher filtrene. Nedbrud før incident-log blev indført vises ikke."
+                                : "Ingen hændelser endnu — eller intet filter-match."}
                         </Message>
                     ) : (
                         <>
@@ -153,7 +185,8 @@ export default function IncidentsPage() {
                                     <Table.Row>
                                         <Table.HeaderCell>Tidspunkt</Table.HeaderCell>
                                         <Table.HeaderCell>Website</Table.HeaderCell>
-                                        <Table.HeaderCell>Status</Table.HeaderCell>
+                                        <Table.HeaderCell>Hændelse</Table.HeaderCell>
+                                        <Table.HeaderCell>Målt status</Table.HeaderCell>
                                         <Table.HeaderCell>HTTP</Table.HeaderCell>
                                         <Table.HeaderCell>Svartid (ms)</Table.HeaderCell>
                                     </Table.Row>
@@ -171,7 +204,14 @@ export default function IncidentsPage() {
                                                 {row.websiteUrl}
                                             </Table.Cell>
                                             <Table.Cell>
-                                                <strong style={{ color: row.isUp ? "#7dcea0" : "#e5989b" }}>
+                                                <span className={incidentKindClass(row.isUp)}>
+                                                    {incidentKindLabel(row.isUp)}
+                                                </span>
+                                            </Table.Cell>
+                                            <Table.Cell>
+                                                <strong
+                                                    style={{ color: row.isUp ? "#7dcea0" : "#f5a9b8" }}
+                                                >
                                                     {row.isUp ? "Oppe" : "Nede"}
                                                 </strong>
                                             </Table.Cell>

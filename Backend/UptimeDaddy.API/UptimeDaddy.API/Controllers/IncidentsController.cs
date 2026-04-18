@@ -19,9 +19,11 @@ namespace UptimeDaddy.API.Controllers
         }
 
         /// <summary>Hændelseslog ved statusskift (op ↔ ned) for brugerens websites.</summary>
+        /// <param name="kind">Tom eller «all»: alle rækker. «down»: kun nedbrud (efter måling «nede»). «up»: kun genoprettelse.</param>
         [HttpGet]
         public async Task<IActionResult> Get(
             [FromQuery] long? websiteId,
+            [FromQuery] string? kind = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 50)
         {
@@ -54,6 +56,12 @@ namespace UptimeDaddy.API.Controllers
 
             if (websiteId.HasValue)
                 baseQuery = baseQuery.Where(x => x.Event.WebsiteId == websiteId.Value);
+
+            var kindNorm = kind?.Trim().ToLowerInvariant();
+            if (kindNorm is "down")
+                baseQuery = baseQuery.Where(x => !x.Event.IsUp);
+            else if (kindNorm is "up")
+                baseQuery = baseQuery.Where(x => x.Event.IsUp);
 
             var totalCount = await baseQuery.CountAsync();
 
