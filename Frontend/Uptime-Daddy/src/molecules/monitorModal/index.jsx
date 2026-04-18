@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo }   from "react";
-import { Modal, Button, Input, Message }  from "semantic-ui-react";
+import { Modal, Button, Input }           from "semantic-ui-react";
 import Cards                              from "../../atoms/cards/cards";
 import statusIcon                         from "../../util/status/statusIcon.jsx";
 import accents                            from "../../util/status/stautsAccent.jsx";
@@ -174,13 +174,6 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
       </Modal.Header>
 
       <Modal.Content style={{ backgroundColor: "#091413" }}>
-        <Message info style={{ backgroundColor: "#0B1D19", color: "#B0E4CC", border: "1px solid #2f6d59", boxShadow: "none" }}>
-          <Message.Header style={{ color: "#408A71" }}>Gem ændringer</Message.Header>
-          <p style={{ margin: "0.5em 0 0", opacity: 0.95 }}>
-            Klik <strong>Gem nedenfor</strong> for at sende interval til API (PUT) og/eller hente målinger til grafen (GET). Kun felter du ændrer, udløser kald — tjek fanen Netværk i browseren.
-          </p>
-        </Message>
-
         <div
           style={{
             display: "flex",
