@@ -1,8 +1,14 @@
+# frozen_string_literal: true
+
 source "https://rubygems.org"
 
-gem "faraday"
-gem "faraday-retry"
-gem "faraday-follow_redirects"
-gem "mqtt"
 gem "dotenv"
-gem "rspec"
+gem "faraday"
+gem "faraday-follow_redirects"
+gem "faraday-retry"
+gem "mqtt"
+
+group :test do
+  gem "rspec", "~> 3.13"
+  gem "webmock", "~> 3.24"
+end

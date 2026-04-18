@@ -1,0 +1,37 @@
+# RSpec for Ruby HTTP-worker (HTTP/http_requester).
+# Kører kun når relevante stier ændres — sparer CI-minutter på resten af monorepoet.
+name: Ruby HTTP requester
+
+on:
+  push:
+    paths:
+      - "HTTP/http_requester/**"
+      - ".github/workflows/ruby-http-requester.yml"
+  pull_request:
+    paths:
+      - "HTTP/http_requester/**"
+      - ".github/workflows/ruby-http-requester.yml"
+  workflow_dispatch:
+
+jobs:
+  rspec:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: HTTP/http_requester
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ruby og Bundler (cache)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version-file: HTTP/http_requester/.ruby-version
+          bundler-cache: true
+          working-directory: HTTP/http_requester
+
+      - name: RSpec
+        run: bundle exec rspec --format documentation

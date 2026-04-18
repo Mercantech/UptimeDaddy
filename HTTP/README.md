@@ -74,3 +74,23 @@ docker compose build
 docker compose up
 
 The application should now be running.
+
+---
+
+## Tests (RSpec)
+
+Specs live under `http_requester/spec/` in folders that mirror `lib/`:
+
+- `spec/models/` — `Page`, `PageHandler`, `State`, `ImmediatePingWorker`, …
+- `spec/services/` — `CurlService`, `FaradayService`, …
+
+Examples follow **Arrange–Act–Assert** (`# Arrange` / `# Act` / `# Assert`).
+
+From `http_requester/`:
+
+```bash
+bundle install
+bundle exec rspec
+```
+
+CI: the monorepo workflow **Ruby HTTP requester** (`.github/workflows/ruby-http-requester.yml`) runs RSpec on pushes and pull requests when files under `HTTP/http_requester/` change.
