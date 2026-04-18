@@ -5,10 +5,22 @@ import {
   setAuthTokens,
 } from "./auth";
 
-const ACCOUNTS_URL =
-  import.meta.env.VITE_ACCOUNTS_URL ?? "http://localhost:6969/accounts";
-const API_URL =
-  import.meta.env.VITE_API_URL ?? "http://localhost:8080/api";
+/** Siden Cloudflare er HTTPS: undgå mixed content hvis VITE_* ved en fejl er bygget med http:// */
+function httpsBaseWhenPageIsSecure(url) {
+  if (typeof window === "undefined") return url;
+  if (window.location.protocol !== "https:") return url;
+  if (url.startsWith("http://")) {
+    return `https://${url.slice(7)}`;
+  }
+  return url;
+}
+
+const ACCOUNTS_URL = httpsBaseWhenPageIsSecure(
+  import.meta.env.VITE_ACCOUNTS_URL ?? "http://localhost:6969/accounts"
+);
+const API_URL = httpsBaseWhenPageIsSecure(
+  import.meta.env.VITE_API_URL ?? "http://localhost:8080/api"
+);
 
 async function refreshAccessToken() {
   const refreshToken = getRefreshToken();
