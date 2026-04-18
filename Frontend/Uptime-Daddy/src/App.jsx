@@ -143,7 +143,15 @@ function App() {
 							marginBottom: "0.65rem",
 						}}
 					>
-						Skud ud til udviklerne
+						<a
+							href="https://www.youtube.com/watch?v=Hbqz2iEZN10"
+							target="_blank"
+							rel="noopener noreferrer"
+							style={{ color: "#6d9084", textDecoration: "underline" }}
+						>
+							Skud ud til udviklerne
+						</a>
+	
 					</div>
 					<div
 						style={{
