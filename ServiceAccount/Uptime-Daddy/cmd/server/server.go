@@ -30,6 +30,13 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
 	routes.RegisterAccountRoutes(mux, routes.AccountHandlers{
 		Register: handler.CreateAccountHandler,
 		Login:    handler.LoginHandler,

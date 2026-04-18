@@ -49,3 +49,9 @@ The API container does **not** run EF migrations on startup. After copying [.env
 3. Bring everything up: `docker compose up --build` (from the repository root).
 
 The Go service runs `AutoMigrate` for the `accounts` table when it starts. Create an admin user (matching `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`) via `POST /accounts/register` so the Ruby worker can log in and load websites from the API.
+
+### Troubleshooting: `password authentication failed` (28P01) or Ruby `name resolution` for `service-account`
+
+PostgreSQL in Docker only applies `POSTGRES_PASSWORD` when the **data volume is first created**. If you change `.env` later, the cluster still has the old password, so **Go exits** and containers may not register the `service-account` DNS name — the Ruby worker then reports `getaddrinfo: Temporary failure in name resolution`.
+
+Fix: align the real Postgres role password with `.env` (see [.env.example](../.env.example) for `ALTER USER` / `docker compose down -v`), then rebuild and start again.

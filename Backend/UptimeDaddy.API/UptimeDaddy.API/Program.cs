@@ -148,6 +148,9 @@ app.MapHealthChecksUI();
 // Prometheus scrape endpoint (default: /metrics)
 app.MapMetrics();
 
+// Liveness for Docker (undgår afhængighed af DB/MQTT i /health)
+app.MapGet("/alive", () => Results.Ok());
+
 app.MapControllers();
 
 app.Run();
