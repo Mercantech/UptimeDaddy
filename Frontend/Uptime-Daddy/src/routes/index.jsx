@@ -5,6 +5,7 @@ import App                                          from "../App";
 import Settings                                     from "../pages/settings";
 import PublicBoardPage                              from "../pages/publicBoard/PublicBoardPage.jsx";
 import DashboardBuilderPage                         from "../pages/dashboardBuilder/DashboardBuilderPage.jsx";
+import IncidentsPage                                from "../pages/incidents/index.jsx";
 import { hasAuthToken }                             from "../util/auth";
 
 function ProtectedRoute({ children }) {
@@ -57,6 +58,14 @@ export default function Router() {
           element={
             <ProtectedRoute>
               <DashboardBuilderPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/incidents"
+          element={
+            <ProtectedRoute>
+              <IncidentsPage />
             </ProtectedRoute>
           }
         />

@@ -52,6 +52,41 @@ Return the latest measurement for a website.
 ### GET /api/measurements
 (Implement as needed) - returns measurements.
 
+## Incidents (statusskift-log)
+
+Poster oprettes når en måling ændrer tilstand fra «oppe» til «nede» eller omvendt (`MonitorStatusAlertService`). Historik før migration/deploy findes ikke i denne log.
+
+### GET /api/incidents
+
+Query parametre:
+
+| Parameter   | Beskrivelse |
+|------------|--------------|
+| `websiteId` | Valgfrit: kun hændelser for dette website (403 hvis ikke ejet af bruger). |
+| `page`      | Side, default 1. |
+| `pageSize`  | 1–100, default 50. |
+
+Response:
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "websiteId": 2,
+      "websiteUrl": "https://example.com",
+      "occurredAt": "2026-04-18T12:00:00Z",
+      "isUp": true,
+      "statusCode": 200,
+      "totalTimeMs": 142.5
+    }
+  ],
+  "totalCount": 10,
+  "page": 1,
+  "pageSize": 50
+}
+```
+
 ## MQTT Topics
 - `uptime/websites/created` - payload when a website is created
 - `uptime/websites/updated` - payload when interval or website changes

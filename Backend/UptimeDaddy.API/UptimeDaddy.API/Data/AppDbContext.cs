@@ -18,6 +18,7 @@ namespace UptimeDaddy.API.Data
         public DbSet<DiscordMonitorSubscription> DiscordMonitorSubscriptions { get; set; }
         public DbSet<DiscordReportSchedule> DiscordReportSchedules { get; set; }
         public DbSet<MonitorIncidentState> MonitorIncidentStates { get; set; }
+        public DbSet<MonitorIncidentEvent> MonitorIncidentEvents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -125,6 +126,17 @@ namespace UptimeDaddy.API.Data
 
             modelBuilder.Entity<MonitorIncidentState>()
                 .HasKey(s => s.WebsiteId);
+
+            modelBuilder.Entity<MonitorIncidentEvent>()
+                .HasOne(e => e.Website)
+                .WithMany()
+                .HasForeignKey(e => e.WebsiteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MonitorIncidentEvent>()
+                .HasIndex(e => new { e.WebsiteId, e.OccurredAt })
+                .IsDescending(false, true)
+                .HasDatabaseName("ix_monitor_incident_events_website_occurred_desc");
         }
     }
 }

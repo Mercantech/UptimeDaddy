@@ -39,24 +39,6 @@ namespace UptimeDaddy.API.Services
                 return;
             }
 
-            var integration = await db.DiscordIntegrations
-                .AsNoTracking()
-                .FirstOrDefaultAsync(i => i.UserId == website.UserId, cancellationToken);
-
-            if (integration == null || !integration.Enabled)
-            {
-                return;
-            }
-
-            var sub = await db.DiscordMonitorSubscriptions
-                .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.WebsiteId == website.Id, cancellationToken);
-
-            if (sub == null || !sub.NotificationEnabled)
-            {
-                return;
-            }
-
             var isUp = MonitorStatusEvaluator.IsUp(m.StatusCode);
             var state = await db.MonitorIncidentStates
                 .FirstOrDefaultAsync(s => s.WebsiteId == website.Id, cancellationToken);
@@ -82,24 +64,55 @@ namespace UptimeDaddy.API.Services
                 return;
             }
 
+            var prevUp = state.LastIsUp;
+
+            db.MonitorIncidentEvents.Add(new MonitorIncidentEvent
+            {
+                WebsiteId = website.Id,
+                OccurredAt = DateTime.UtcNow,
+                IsUp = isUp,
+                StatusCode = m.StatusCode,
+                TotalTimeMs = m.TotalTimeMs
+            });
+
+            state.LastIsUp = isUp;
+            state.LastStatusCode = m.StatusCode;
+            state.LastTransitionAt = DateTime.UtcNow;
+
             var cooldownSeconds = int.TryParse(_configuration["Discord:NotificationCooldownSeconds"], out var c)
                 ? c
                 : 60;
 
-            if (state.LastNotificationSentAt.HasValue &&
-                (DateTime.UtcNow - state.LastNotificationSentAt.Value).TotalSeconds < cooldownSeconds)
+            var discordCooldownBlocks =
+                state.LastNotificationSentAt.HasValue &&
+                (DateTime.UtcNow - state.LastNotificationSentAt.Value).TotalSeconds < cooldownSeconds;
+
+            if (discordCooldownBlocks)
             {
-                state.LastIsUp = isUp;
-                state.LastStatusCode = m.StatusCode;
-                state.LastTransitionAt = DateTime.UtcNow;
                 await db.SaveChangesAsync(cancellationToken);
                 return;
             }
 
-            var prevUp = state.LastIsUp;
-            state.LastIsUp = isUp;
-            state.LastStatusCode = m.StatusCode;
-            state.LastTransitionAt = DateTime.UtcNow;
+            var integration = await db.DiscordIntegrations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.UserId == website.UserId, cancellationToken);
+
+            if (integration == null || !integration.Enabled)
+            {
+                await db.SaveChangesAsync(cancellationToken);
+                return;
+            }
+
+            var sub = await db.DiscordMonitorSubscriptions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.WebsiteId == website.Id, cancellationToken);
+
+            if (sub == null || !sub.NotificationEnabled)
+            {
+                await db.SaveChangesAsync(cancellationToken);
+                return;
+            }
+
             state.LastNotificationSentAt = DateTime.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
 
