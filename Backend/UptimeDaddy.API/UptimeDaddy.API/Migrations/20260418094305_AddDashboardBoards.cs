@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -63,6 +63,11 @@ namespace UptimeDaddy.API.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_dashboard_board_items_website_id",
+                table: "dashboard_board_items",
+                column: "website_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_dashboard_board_items_board_sort",
