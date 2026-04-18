@@ -6,6 +6,7 @@ import { API_URL, fetchCall } 				from "../../util/api.jsx";
 import { getAuthPayload } 					from "../../util/auth";
 import accents 								from "../../util/status/stautsAccent.jsx";
 import Loader 								from "../../atoms/loader/loader.jsx";
+import { formatIntervalSeconds } 				from "../../util/durationFormat.js";
 
 
 function TableComponent({ refreshSignal = 0, onDataChanged }) {
@@ -44,6 +45,7 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 				<Table.Header>
 					<Table.Row>
 						<Table.HeaderCell>URL</Table.HeaderCell>
+						<Table.HeaderCell>Ping-interval</Table.HeaderCell>
 						<Table.HeaderCell>Status Code</Table.HeaderCell>
 						<Table.HeaderCell>DNS Lookup</Table.HeaderCell>
 						<Table.HeaderCell>Connect</Table.HeaderCell>
@@ -78,6 +80,11 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 								)}
 								<span>{m.url}</span>
 							</div>
+						</Table.Cell>
+						<Table.Cell>
+							<span title={`${m.intervalTime ?? 0} sekunder`}>
+								{formatIntervalSeconds(m.intervalTime ?? 0)}
+							</span>
 						</Table.Cell>
 						<Table.Cell>
 						<Label color={accents.statusAccent(latest?.statusCode)}>
