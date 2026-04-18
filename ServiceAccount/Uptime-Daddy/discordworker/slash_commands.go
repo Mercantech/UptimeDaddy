@@ -124,9 +124,9 @@ func buildSkudUdMessage() string {
 	for _, c := range footerCredits {
 		nameLinks = append(nameLinks, fmt.Sprintf("[%s](%s)", c.name, c.url))
 	}
-	return "**Skud ud til udviklerne**\n\n" +
-		strings.Join(nameLinks, " · ") + "\n\n" +
-		"[YouTube-klip](" + devYouTubeURL + ")"
+	// Samme som footer: anchor-teksten "Skud ud til udviklerne" peger på YouTube (ikke separat YT-label).
+	return "[Skud ud til udviklerne](" + devYouTubeURL + ")\n\n" +
+		strings.Join(nameLinks, " · ")
 }
 
 func handleSlashReport(s *discordgo.Session, i *discordgo.InteractionCreate, pool *pgxpool.Pool) {
