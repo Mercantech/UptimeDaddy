@@ -10,4 +10,11 @@ export default defineConfig({
   build: {
     cssMinify: false,
   },
+  server: {
+    allowedHosts: ['.mercantec.tech', 'localhost'],
+  },
+  preview: {
+    // Tillad Host-header fra Cloudflare Tunnel / produktionsdomæne (npm run preview)
+    allowedHosts: ['.mercantec.tech', 'localhost'],
+  },
 })
