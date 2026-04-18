@@ -111,6 +111,20 @@ func Run() error {
 		return fmt.Errorf("discord session: %w", err)
 	}
 
+	// Gateway: online-status + slash-kommandoer (InteractionCreate).
+	dg.Identify.Intents = discordgo.IntentsGuilds
+	dg.AddHandler(onReadyRegisterSlashCommands)
+	dg.AddHandler(newSlashInteractionHandler(pool))
+
+	if err := dg.Open(); err != nil {
+		return fmt.Errorf("discord gateway: %w", err)
+	}
+	defer func() {
+		if cerr := dg.Close(); cerr != nil {
+			log.Printf("discord gateway luk: %v", cerr)
+		}
+	}()
+
 	st := &stats{}
 	idem := newIdempotencyCache(24 * time.Hour)
 

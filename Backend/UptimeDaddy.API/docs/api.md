@@ -109,3 +109,12 @@ Manuel rapport (sender MQTT til Discord worker).
 ```
 
 `websiteIds` kan udelades for alle websites for brugeren.
+
+## Discord slash-kommandoer (bot)
+
+Når **discord-worker** kører med Gateway, registreres globale (eller guild-specifikke med `DISCORD_SLASH_GUILD_ID`) kommandoer:
+
+- `/udm-rapport` — 24t oversigt til integrationens **standardkanal** (kræver opsat `guild_id` + kanal i API).
+- `/udm-hjaelp` — kort hjælp.
+
+Inviter botten med scope **`applications.commands`** (se Backend README).

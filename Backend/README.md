@@ -54,7 +54,11 @@ The Go service runs `AutoMigrate` for the `accounts` table when it starts. Creat
 
 - **.NET API** gemmer Discord-indstillinger i PostgreSQL, detekterer status-skift på målinger og publicerer events på MQTT (`uptime/discord/*`).
 - **`discord-worker` (Go)** i `docker-compose.yml` læser samme database, abonnerer MQTT, sender beskeder via Discord API, og kører planlagte rapporter (cron i `discord_report_schedules`).
-- Sæt `DISCORD_BOT_TOKEN` i `.env` og inviter botten til serveren med rettighed til at skrive i de valgte kanaler.
+- Sæt `DISCORD_BOT_TOKEN` i `.env` og inviter botten med både **`bot`** og **`applications.commands`** (ellers virker `/`-kommandoer ikke). Eksempel-URL (erstat `APPLICATION_ID` med bot/app-id fra Discord Developer Portal):  
+  `https://discord.com/api/oauth2/authorize?client_id=APPLICATION_ID&permissions=3072&scope=bot%20applications.commands`  
+  (`3072` = se kanal + sende beskeder; udvid efter behov.)
+- Worker’en åbner **Gateway** (`Session.Open`), så botten er **online**, og den registrerer slash-kommandoerne **`/udm-rapport`** og **`/udm-hjaelp`**. Rapport-kommandoen poster i den **standardkanal**, I har gemt i integrationen (samme som MQTT-rapporter).
+- Valgfrit: sæt `DISCORD_SLASH_GUILD_ID` i `.env` for at registrere kommandoer kun på én server med det samme (ellers **global** registrering med kort forsinkelse).
 - API-reference: [docs/api.md](UptimeDaddy.API/docs/api.md) (sektion *Discord*).
 
 ### Troubleshooting: `password authentication failed` (28P01) or Ruby `name resolution` for `service-account`
