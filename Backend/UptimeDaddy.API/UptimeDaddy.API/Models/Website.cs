@@ -23,6 +23,8 @@ namespace UptimeDaddy.API.Models
 
         public List<Measurement> Measurements { get; set; } = new();
 
+        public List<DashboardBoardItem> DashboardBoardItems { get; set; } = new();
+
         [Column("faviconbase64")]
         public string? FaviconBase64 { get; set; }
     }

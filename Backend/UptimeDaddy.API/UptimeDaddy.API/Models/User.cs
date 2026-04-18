@@ -18,5 +18,7 @@ namespace UptimeDaddy.API.Models
         public string Fullname { get; set; } = string.Empty;
 
         public List<Website> Websites { get; set; } = new();
+
+        public List<DashboardBoard> DashboardBoards { get; set; } = new();
     }
 }

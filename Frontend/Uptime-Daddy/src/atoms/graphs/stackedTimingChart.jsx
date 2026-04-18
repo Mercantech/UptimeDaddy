@@ -10,25 +10,9 @@ import {
 } from "recharts";
 import { Segment, Form, Input } from "semantic-ui-react";
 import { useState, useMemo } from "react";
+import { measurementToStackSegments } from "../../util/measurementTimingSegments.js";
 
-/** Curl-tider er kumulative; vi splitter dem i ikke-overlappende faser (ms). */
-export function measurementToStackSegments(m) {
-  if (!m) {
-    return { dns: 0, tcp: 0, tls: 0, wait: 0, download: 0 };
-  }
-  const dns = Number(m.dnsLookupMs) || 0;
-  const conn = Number(m.connectMs) || 0;
-  const tlsEnd = Number(m.tlsHandshakeMs) || 0;
-  const ttfb = Number(m.timeToFirstByteMs) || 0;
-  const total = Number(m.totalTimeMs) || 0;
-
-  const tcp = Math.max(0, conn - dns);
-  const tls = Math.max(0, tlsEnd - conn);
-  const wait = Math.max(0, ttfb - tlsEnd);
-  const download = Math.max(0, total - ttfb);
-
-  return { dns, tcp, tls, wait, download };
-}
+export { measurementToStackSegments };
 
 const STACK_META = [
   { key: "dns", label: "DNS-opslag", fill: "#408A71" },

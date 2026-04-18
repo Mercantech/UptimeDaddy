@@ -24,6 +24,9 @@ function Navbar() {
                         <Button compact onClick={() => navigate("/")}>Dashboard</Button>
                     </Menu.Item>
                     <Menu.Item>
+                        <Button compact onClick={() => navigate("/dashboard-builder")}>Dashboard-builder</Button>
+                    </Menu.Item>
+                    <Menu.Item>
                         <Button compact onClick={() => navigate("/settings")}>Settings</Button>
                     </Menu.Item>
                     <Menu.Item>

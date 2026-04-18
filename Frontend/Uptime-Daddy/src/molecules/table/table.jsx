@@ -8,6 +8,7 @@ import accents 								from "../../util/status/stautsAccent.jsx";
 import Loader 								from "../../atoms/loader/loader.jsx";
 import { formatIntervalSeconds } 				from "../../util/durationFormat.js";
 import UptimeBar 								from "../../atoms/uptimeBar/UptimeBar.jsx";
+import TimingCell                             from "../../atoms/timingCell/TimingCell.jsx";
 
 
 function TableComponent({ refreshSignal = 0, onDataChanged }) {
@@ -70,11 +71,21 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 							Antal checks
 						</Table.HeaderCell>
 						<Table.HeaderCell>Status</Table.HeaderCell>
-						<Table.HeaderCell>DNS</Table.HeaderCell>
-						<Table.HeaderCell>Forbind.</Table.HeaderCell>
-						<Table.HeaderCell>TLS</Table.HeaderCell>
-						<Table.HeaderCell>TTFB</Table.HeaderCell>
-						<Table.HeaderCell>Total</Table.HeaderCell>
+						<Table.HeaderCell title="Kumulativ tid fra start (curl). DNS er første fase.">
+							DNS
+						</Table.HeaderCell>
+						<Table.HeaderCell title="Kumulativ Forbind. fra start; Δ = TCP efter DNS (som i stablet graf).">
+							Forbind.
+						</Table.HeaderCell>
+						<Table.HeaderCell title="Kumulativ TLS fra start; Δ = TLS-handtryk efter TCP.">
+							TLS
+						</Table.HeaderCell>
+						<Table.HeaderCell title="Kumulativ TTFB fra start; Δ = ventetid efter TLS.">
+							TTFB
+						</Table.HeaderCell>
+						<Table.HeaderCell title="Kumulativ total fra start; Δ = download efter TTFB.">
+							Total
+						</Table.HeaderCell>
 					</Table.Row>
 				</Table.Header>
 
@@ -124,11 +135,11 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 							{latest?.statusCode ?? "-"}
 						</Label>
 						</Table.Cell>
-						<Table.Cell>{latest?.dnsLookupMs != null ? `${latest.dnsLookupMs}ms` : "-"}</Table.Cell>
-						<Table.Cell>{latest?.connectMs != null ? `${latest.connectMs}ms` : "-"}</Table.Cell>
-						<Table.Cell>{latest?.tlsHandshakeMs != null ? `${latest.tlsHandshakeMs}ms` : "-"}</Table.Cell>
-						<Table.Cell>{latest?.timeToFirstByteMs != null ? `${latest.timeToFirstByteMs}ms` : "-"}</Table.Cell>
-						<Table.Cell>{latest?.totalTimeMs != null ? `${latest.totalTimeMs}ms` : "-"}</Table.Cell>
+						<Table.Cell><TimingCell latest={latest} kind="dns" /></Table.Cell>
+						<Table.Cell><TimingCell latest={latest} kind="connect" /></Table.Cell>
+						<Table.Cell><TimingCell latest={latest} kind="tls" /></Table.Cell>
+						<Table.Cell><TimingCell latest={latest} kind="ttfb" /></Table.Cell>
+						<Table.Cell><TimingCell latest={latest} kind="total" /></Table.Cell>
 					</Table.Row>
 					);
 				})}

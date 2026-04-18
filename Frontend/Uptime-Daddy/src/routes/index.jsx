@@ -3,6 +3,8 @@ import Login                                        from "../pages/login/login";
 import Register                                     from "../pages/register/register";
 import App                                          from "../App";
 import Settings                                     from "../pages/settings";
+import PublicBoardPage                              from "../pages/publicBoard/PublicBoardPage.jsx";
+import DashboardBuilderPage                         from "../pages/dashboardBuilder/DashboardBuilderPage.jsx";
 import { hasAuthToken }                             from "../util/auth";
 
 function ProtectedRoute({ children }) {
@@ -33,6 +35,7 @@ export default function Router() {
             </PublicOnlyRoute>
           }
         />
+        <Route path="/b/:token" element={<PublicBoardPage />} />
         <Route
           path="/"
           element={
@@ -46,6 +49,14 @@ export default function Router() {
           element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard-builder"
+          element={
+            <ProtectedRoute>
+              <DashboardBuilderPage />
             </ProtectedRoute>
           }
         />

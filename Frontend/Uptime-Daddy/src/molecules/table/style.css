@@ -73,3 +73,19 @@
   vertical-align: middle;
   min-width: 200px;
 }
+
+.timing-cell {
+  line-height: 1.25;
+}
+
+.timing-cell__cum {
+  color: #c5ebe0;
+  font-variant-numeric: tabular-nums;
+}
+
+.timing-cell__delta {
+  font-size: 0.78rem;
+  color: #6d9084;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}

@@ -135,6 +135,86 @@ namespace UptimeDaddy.API.Migrations
                     b.ToTable("websites");
                 });
 
+            modelBuilder.Entity("UptimeDaddy.API.Models.DashboardBoard", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_published");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("ShareToken")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("share_token");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShareToken")
+                        .IsUnique()
+                        .HasDatabaseName("ix_dashboard_boards_share_token");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_dashboard_boards_user_id");
+
+                    b.ToTable("dashboard_boards");
+                });
+
+            modelBuilder.Entity("UptimeDaddy.API.Models.DashboardBoardItem", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("DashboardBoardId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("dashboard_board_id");
+
+                    b.Property<string>("DisplayLabel")
+                        .HasColumnType("text")
+                        .HasColumnName("display_label");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<long>("WebsiteId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("website_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DashboardBoardId", "SortOrder")
+                        .HasDatabaseName("ix_dashboard_board_items_board_sort");
+
+                    b.ToTable("dashboard_board_items");
+                });
+
             modelBuilder.Entity("UptimeDaddy.API.Models.Measurement", b =>
                 {
                     b.HasOne("UptimeDaddy.API.Models.Website", "Website")
@@ -157,14 +237,53 @@ namespace UptimeDaddy.API.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("UptimeDaddy.API.Models.DashboardBoard", b =>
+                {
+                    b.HasOne("UptimeDaddy.API.Models.User", "User")
+                        .WithMany("DashboardBoards")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("UptimeDaddy.API.Models.DashboardBoardItem", b =>
+                {
+                    b.HasOne("UptimeDaddy.API.Models.DashboardBoard", "DashboardBoard")
+                        .WithMany("Items")
+                        .HasForeignKey("DashboardBoardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("UptimeDaddy.API.Models.Website", "Website")
+                        .WithMany("DashboardBoardItems")
+                        .HasForeignKey("WebsiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DashboardBoard");
+
+                    b.Navigation("Website");
+                });
+
             modelBuilder.Entity("UptimeDaddy.API.Models.User", b =>
                 {
+                    b.Navigation("DashboardBoards");
+
                     b.Navigation("Websites");
                 });
 
             modelBuilder.Entity("UptimeDaddy.API.Models.Website", b =>
                 {
+                    b.Navigation("DashboardBoardItems");
+
                     b.Navigation("Measurements");
+                });
+
+            modelBuilder.Entity("UptimeDaddy.API.Models.DashboardBoard", b =>
+                {
+                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }
