@@ -3,6 +3,18 @@
   padding: 2rem 0;
 }
 
+.settings-page-container .settings-panel + .settings-panel {
+  margin-top: 1.5rem;
+}
+
+.settings-subtitle code {
+  background: #091413;
+  padding: 0.12rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid #2f6d59;
+  font-size: 0.9em;
+}
+
 .settings-panel.ui.segment {
   background-color: #0f1f1c !important;
   border: 1px solid #2f6d59 !important;

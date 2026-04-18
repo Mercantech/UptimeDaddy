@@ -59,7 +59,14 @@ async function refreshAccessToken() {
   }
 }
 
-async function fetchCall({ url, method = "GET", body, withAuth = true }) {
+async function fetchCall({
+  url,
+  method = "GET",
+  body,
+  withAuth = true,
+  /** Ved true returneres `null` ved HTTP 404 i stedet for at kaste (fx GET der kan mangle en ressource). */
+  nullIfNotFound = false,
+}) {
   const requestBody = body == null ? undefined : JSON.stringify(body);
 
   const sendRequest = async (tokenOverride) => {
@@ -93,6 +100,9 @@ async function fetchCall({ url, method = "GET", body, withAuth = true }) {
   }
 
   if (!response.ok) {
+    if (nullIfNotFound && response.status === 404) {
+      return null;
+    }
     let detail = `Request failed with status ${response.status}`;
     try {
       const j = await response.json();
