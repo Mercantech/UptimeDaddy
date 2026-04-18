@@ -66,6 +66,9 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 						<Table.HeaderCell>URL</Table.HeaderCell>
 						<Table.HeaderCell>Oversigt</Table.HeaderCell>
 						<Table.HeaderCell>Ping-interval</Table.HeaderCell>
+						<Table.HeaderCell title="Antal gemte målinger (checks) for dette website">
+							Antal checks
+						</Table.HeaderCell>
 						<Table.HeaderCell>Status</Table.HeaderCell>
 						<Table.HeaderCell>DNS</Table.HeaderCell>
 						<Table.HeaderCell>Forbind.</Table.HeaderCell>
@@ -77,7 +80,9 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 
 				<Table.Body>
 				{websiteData.map((m) => {
-					const latest = m.measurements[0];
+					const measurements = m.measurements ?? [];
+					const latest = measurements[0];
+					const checkCount = measurements.length;
 					const faviconSrc = m.faviconBase64 ? `data:image/x-icon;base64,${m.faviconBase64}` : null;
 					return (
 					<Table.Row
@@ -102,11 +107,16 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 							</div>
 						</Table.Cell>
 						<Table.Cell className="uptime-bar-cell">
-							<UptimeBar measurements={m.measurements ?? []} />
+							<UptimeBar measurements={measurements} />
 						</Table.Cell>
 						<Table.Cell>
 							<span title={`${m.intervalTime ?? 0} sekunder`}>
 								{formatIntervalSeconds(m.intervalTime ?? 0)}
+							</span>
+						</Table.Cell>
+						<Table.Cell textAlign="center">
+							<span title={`${checkCount} gemte målinger i databasen`}>
+								{checkCount.toLocaleString("da-DK")}
 							</span>
 						</Table.Cell>
 						<Table.Cell>

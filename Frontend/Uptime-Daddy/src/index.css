@@ -109,3 +109,15 @@ color: #e8fff6;
   color: #b0e4cc;
   font-size: 1.2rem;
 }
+
+.credit-github-link {
+  display: inline-flex;
+  color: #7ecfb0;
+  line-height: 0;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.credit-github-link:hover {
+  color: #b0e4cc;
+  transform: scale(1.08);
+}
