@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo }   from "react";
-import { Modal, Button, Input }           from "semantic-ui-react";
-import Cards                              from "../../atoms/cards/cards";
-import statusIcon                         from "../../util/status/statusIcon.jsx";
-import accents                            from "../../util/status/stautsAccent.jsx";
-import { API_URL, fetchCall }             from "../../util/api.jsx";
-import StackedTimingChart                 from "../../atoms/graphs/stackedTimingChart.jsx";
-import Loader                             from "../../atoms/loader/loader.jsx";
+import { useState, useEffect, useMemo } from "react";
+import { Modal, Button, Input, Form, Checkbox } from "semantic-ui-react";
+import { Link } from "react-router-dom";
+import Cards from "../../atoms/cards/cards";
+import statusIcon from "../../util/status/statusIcon.jsx";
+import accents from "../../util/status/stautsAccent.jsx";
+import { API_URL, fetchCall } from "../../util/api.jsx";
+import StackedTimingChart from "../../atoms/graphs/stackedTimingChart.jsx";
+import Loader from "../../atoms/loader/loader.jsx";
 import { formatIntervalSeconds } from "../../util/durationFormat.js";
 
 /** API returnerer ældste først; UI forventer nyeste først (som /with-measurements). */
@@ -28,10 +29,18 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
 
   /** Streng i feltet så brugeren kan slette alt midlertidigt uden at React “snapper” tilbage. */
   const [intervalStr, setIntervalStr] = useState(() =>
-    monitor ? String(getMonitorInterval(monitor)) : "60"
+    monitor ? String(getMonitorInterval(monitor)) : "60",
   );
 
   const [chartHoursStr, setChartHoursStr] = useState("");
+
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [channelOverrideStr, setChannelOverrideStr] = useState("");
+  const [initialDiscord, setInitialDiscord] = useState({
+    enabled: false,
+    channel: "",
+  });
+  const [notifLoaded, setNotifLoaded] = useState(false);
 
   useEffect(() => {
     if (monitor) {
@@ -39,6 +48,40 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
       setChartHoursStr("");
     }
   }, [monitor]);
+
+  useEffect(() => {
+    if (!monitor?.id) {
+      setNotifLoaded(false);
+      return;
+    }
+    let cancelled = false;
+    setNotifLoaded(false);
+    (async () => {
+      try {
+        const data = await fetchCall({
+          url: `${API_URL}/discord/websites/${monitor.id}/notifications`,
+          method: "GET",
+        });
+        if (cancelled) return;
+        const ch = (data.channelIdOverride ?? "").trim();
+        const en = Boolean(data.notificationEnabled);
+        setNotifEnabled(en);
+        setChannelOverrideStr(data.channelIdOverride ?? "");
+        setInitialDiscord({ enabled: en, channel: ch });
+      } catch {
+        if (!cancelled) {
+          setNotifEnabled(false);
+          setChannelOverrideStr("");
+          setInitialDiscord({ enabled: false, channel: "" });
+        }
+      } finally {
+        if (!cancelled) setNotifLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [monitor?.id]);
 
   const parsedInterval = useMemo(() => {
     const t = intervalStr.trim();
@@ -65,25 +108,68 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
 
   const wantChartRefetch = Boolean(parsedChartHours);
 
+  const discordDirty =
+    notifLoaded &&
+    monitor &&
+    (notifEnabled !== initialDiscord.enabled ||
+      channelOverrideStr.trim() !== initialDiscord.channel);
+
   const canSave = Boolean(
     monitor &&
-    ((parsedInterval !== null && intervalDirty) || wantChartRefetch)
+      ((parsedInterval !== null && intervalDirty) ||
+        wantChartRefetch ||
+        discordDirty),
   );
 
   if (!monitor && !loading) return null;
 
-  const latest = monitor.measurements[0];
+  const measurements = monitor?.measurements ?? [];
+  const latest = measurements[0];
 
   const items = [
-    { header: latest ? String(latest.statusCode) : "-", description: "HTTP-status", icon: statusIcon(latest?.statusCode), accent: accents.statusAccent(latest?.statusCode) },
-    { header: formatIntervalSeconds(displayInterval), description: "Ping-interval (redigér ovenfor)", icon: "refresh", accent: "blue" },
-    { header: latest?.dnsLookupMs != null ? `${latest.dnsLookupMs} ms` : "-", description: "DNS-opslag", icon: "search", accent: accents.dnsAccent(latest?.dnsLookupMs) },
-    { header: latest?.connectMs != null ? `${latest.connectMs} ms` : "-", description: "Forbindelse", icon: "plug", accent: accents.connectAccent(latest?.connectMs) },
-    { header: latest?.tlsHandshakeMs != null ? `${latest.tlsHandshakeMs} ms` : "-", description: "TLS-handtryk", icon: "lock", accent: accents.tlsAccent(latest?.tlsHandshakeMs) },
-    { header: latest?.timeToFirstByteMs != null ? `${latest.timeToFirstByteMs} ms` : "-", description: "Tid til første byte", icon: "clock", accent: accents.tfbAccent(latest?.timeToFirstByteMs) },
-    { header: latest?.totalTimeMs != null ? `${latest.totalTimeMs} ms` : "-", description: "Samlet responstid", icon: "hourglass half", accent: accents.ttAccent(latest?.totalTimeMs) },
+    {
+      header: latest ? String(latest.statusCode) : "-",
+      description: "HTTP-status",
+      icon: statusIcon(latest?.statusCode),
+      accent: accents.statusAccent(latest?.statusCode),
+    },
+    {
+      header: formatIntervalSeconds(displayInterval),
+      description: "Ping-interval (redigér ovenfor)",
+      icon: "refresh",
+      accent: "blue",
+    },
+    {
+      header: latest?.dnsLookupMs != null ? `${latest.dnsLookupMs} ms` : "-",
+      description: "DNS-opslag",
+      icon: "search",
+      accent: accents.dnsAccent(latest?.dnsLookupMs),
+    },
+    {
+      header: latest?.connectMs != null ? `${latest.connectMs} ms` : "-",
+      description: "Forbindelse",
+      icon: "plug",
+      accent: accents.connectAccent(latest?.connectMs),
+    },
+    {
+      header: latest?.tlsHandshakeMs != null ? `${latest.tlsHandshakeMs} ms` : "-",
+      description: "TLS-handtryk",
+      icon: "lock",
+      accent: accents.tlsAccent(latest?.tlsHandshakeMs),
+    },
+    {
+      header: latest?.timeToFirstByteMs != null ? `${latest.timeToFirstByteMs} ms` : "-",
+      description: "Tid til første byte",
+      icon: "clock",
+      accent: accents.tfbAccent(latest?.timeToFirstByteMs),
+    },
+    {
+      header: latest?.totalTimeMs != null ? `${latest.totalTimeMs} ms` : "-",
+      description: "Samlet responstid",
+      icon: "hourglass half",
+      accent: accents.ttAccent(latest?.totalTimeMs),
+    },
   ];
-
 
   const handleDelete = async (website) => {
     setLoading(true);
@@ -113,7 +199,7 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
     setLoading(true);
 
     try {
-      let next = { ...website };
+      let next = { ...website, measurements };
 
       if (parsedInterval !== null && intervalDirty) {
         const res = await fetchCall({
@@ -131,6 +217,22 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
           measurements: next.measurements,
         };
         setIntervalStr(String(res.intervalTime));
+      }
+
+      if (discordDirty) {
+        await fetchCall({
+          url: `${API_URL}/discord/websites/${website.id}/notifications`,
+          method: "PUT",
+          body: {
+            notificationEnabled: notifEnabled,
+            channelIdOverride:
+              channelOverrideStr.trim() === "" ? null : channelOverrideStr.trim(),
+          },
+        });
+        setInitialDiscord({
+          enabled: notifEnabled,
+          channel: channelOverrideStr.trim(),
+        });
       }
 
       if (wantChartRefetch) {
@@ -154,106 +256,213 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
     } catch (e) {
       console.error(e);
       window.alert(
-        `Kunne ikke gemme / hente data: ${e?.message ?? e}\n\n(Tjek netværk, login og at API kører.)`
+        `Kunne ikke gemme / hente data: ${e?.message ?? e}\n\n(Tjek netværk, login og at API kører.)`,
       );
     } finally {
       setLoading(false);
     }
   };
 
+  const chartMonitor = monitor
+    ? { ...monitor, measurements }
+    : monitor;
+
   return (
     <>
-    {monitor && (
-    <Modal open={Boolean(monitor)} onClose={onClose} size="large">
-      <Loader isLoading={loading} text="Opdaterer website…" />
-      <Modal.Header style={{ backgroundColor: "#091413", color: "#408A71", borderBottom: "1px solid #2f6d59" }}>
-        <span>Monitor-detaljer</span>
-        {monitor?.url ? (
-          <div style={{ color: "#8aa89c", fontSize: "0.9rem", marginTop: "6px", wordBreak: "break-all" }}>{monitor.url}</div>
-        ) : null}
-      </Modal.Header>
+      {monitor && (
+        <Modal open={Boolean(monitor)} onClose={onClose} size="large">
+          <Loader isLoading={loading} text="Opdaterer website…" />
+          <Modal.Header
+            style={{
+              backgroundColor: "#091413",
+              color: "#408A71",
+              borderBottom: "1px solid #2f6d59",
+            }}
+          >
+            <span>Monitor-detaljer</span>
+            {monitor?.url ? (
+              <div
+                style={{
+                  color: "#8aa89c",
+                  fontSize: "0.9rem",
+                  marginTop: "6px",
+                  wordBreak: "break-all",
+                }}
+              >
+                {monitor.url}
+              </div>
+            ) : null}
+          </Modal.Header>
 
-      <Modal.Content style={{ backgroundColor: "#091413" }}>
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "16px",
-            alignItems: "flex-end",
-            marginBottom: "1.25rem",
-            padding: "14px",
-            borderRadius: "8px",
-            border: "1px solid #2f6d59",
-            backgroundColor: "#0B1D19",
-          }}
-        >
-          <div>
-            <div style={{ color: "#B0E4CC", fontSize: "0.85rem", marginBottom: "6px" }}>
-              Ping-interval (sekunder) — gemmes på serveren
+          <Modal.Content style={{ backgroundColor: "#091413" }}>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "16px",
+                alignItems: "flex-end",
+                marginBottom: "1.25rem",
+                padding: "14px",
+                borderRadius: "8px",
+                border: "1px solid #2f6d59",
+                backgroundColor: "#0B1D19",
+              }}
+            >
+              <div>
+                <div
+                  style={{ color: "#B0E4CC", fontSize: "0.85rem", marginBottom: "6px" }}
+                >
+                  Ping-interval (sekunder) — gemmes på serveren
+                </div>
+                <Input
+                  size="small"
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={intervalStr}
+                  onChange={(e) => setIntervalStr(e.target.value)}
+                  label={{ basic: true, content: "Sekunder" }}
+                  labelPosition="right"
+                  placeholder="fx 300"
+                  style={{
+                    width: "220px",
+                    backgroundColor: "#091413",
+                    border: "1px solid #2f6d59",
+                    borderRadius: "6px",
+                    color: "#B0E4CC",
+                  }}
+                  input={{
+                    style: {
+                      backgroundColor: "#091413",
+                      color: "#B0E4CC",
+                      borderRadius: "6px",
+                      padding: "10px",
+                    },
+                  }}
+                />
+                <div style={{ color: "#8aa89c", fontSize: "0.78rem", marginTop: "6px" }}>
+                  Vises som {formatIntervalSeconds(displayInterval)}
+                </div>
+              </div>
+              <div>
+                <div
+                  style={{ color: "#B0E4CC", fontSize: "0.85rem", marginBottom: "6px" }}
+                >
+                  Graf: seneste timer (valgfrit)
+                </div>
+                <Input
+                  size="small"
+                  type="number"
+                  min={1}
+                  max={8760}
+                  step={1}
+                  value={chartHoursStr}
+                  onChange={(e) => setChartHoursStr(e.target.value)}
+                  label={{ basic: true, content: "Timer" }}
+                  labelPosition="right"
+                  placeholder="fx 24 — tom = ikke hente"
+                  style={{
+                    width: "260px",
+                    backgroundColor: "#091413",
+                    border: "1px solid #2f6d59",
+                    borderRadius: "6px",
+                    color: "#B0E4CC",
+                  }}
+                  input={{
+                    style: {
+                      backgroundColor: "#091413",
+                      color: "#B0E4CC",
+                      borderRadius: "6px",
+                      padding: "10px",
+                    },
+                  }}
+                />
+                <div style={{ color: "#8aa89c", fontSize: "0.78rem", marginTop: "6px" }}>
+                  Udfyld og gem for GET mod{" "}
+                  <code style={{ color: "#B0E4CC" }}>/Measurements/website/…?hours=</code>
+                </div>
+              </div>
             </div>
-            <Input
-              size="small"
-              type="number"
-              min={1}
-              step={1}
-              value={intervalStr}
-              onChange={(e) => setIntervalStr(e.target.value)}
-              label={{ basic: true, content: "Sekunder" }}
-              labelPosition="right"
-              placeholder="fx 300"
-              style={{ width: "220px", backgroundColor: "#091413", border: "1px solid #2f6d59", borderRadius: "6px", color: "#B0E4CC" }}
-              input={{ style: { backgroundColor: "#091413", color: "#B0E4CC", borderRadius: "6px", padding: "10px" } }}
-            />
-            <div style={{ color: "#8aa89c", fontSize: "0.78rem", marginTop: "6px" }}>
-              Vises som {formatIntervalSeconds(displayInterval)}
-            </div>
-          </div>
-          <div>
-            <div style={{ color: "#B0E4CC", fontSize: "0.85rem", marginBottom: "6px" }}>
-              Graf: seneste timer (valgfrit)
-            </div>
-            <Input
-              size="small"
-              type="number"
-              min={1}
-              max={8760}
-              step={1}
-              value={chartHoursStr}
-              onChange={(e) => setChartHoursStr(e.target.value)}
-              label={{ basic: true, content: "Timer" }}
-              labelPosition="right"
-              placeholder="fx 24 — tom = ikke hente"
-              style={{ width: "260px", backgroundColor: "#091413", border: "1px solid #2f6d59", borderRadius: "6px", color: "#B0E4CC" }}
-              input={{ style: { backgroundColor: "#091413", color: "#B0E4CC", borderRadius: "6px", padding: "10px" } }}
-            />
-            <div style={{ color: "#8aa89c", fontSize: "0.78rem", marginTop: "6px" }}>
-              Udfyld og gem for GET mod <code style={{ color: "#B0E4CC" }}>/Measurements/website/…?hours=</code>
-            </div>
-          </div>
-        </div>
 
-        <Cards items={items} />
-        <StackedTimingChart data={monitor} />
-      </Modal.Content>
+            <div
+              style={{
+                marginBottom: "1.25rem",
+                padding: "14px",
+                borderRadius: "8px",
+                border: "1px solid #2f6d59",
+                backgroundColor: "#0B1D19",
+              }}
+            >
+              <div
+                style={{
+                  color: "#B0E4CC",
+                  fontSize: "0.92rem",
+                  fontWeight: 600,
+                  marginBottom: "8px",
+                }}
+              >
+                Discord-alarm
+              </div>
+              <p style={{ color: "#8aa89c", fontSize: "0.82rem", marginBottom: "10px" }}>
+                Ved statusskift til <strong>ikke oppe</strong> (og genoprettet) sendes besked til Discord,
+                hvis alarmen er slået til og{" "}
+                <Link to="/settings" style={{ color: "#6dcea0" }}>
+                  Discord-integrationen
+                </Link>{" "}
+                er sat op.
+              </p>
+              {!notifLoaded ? (
+                <p style={{ color: "#8aa89c", fontSize: "0.8rem" }}>Henter alarm-indstillinger…</p>
+              ) : (
+                <Form style={{ marginTop: "6px" }}>
+                  <Form.Field>
+                    <Checkbox
+                      toggle
+                      label="Send til Discord når monitoren fejler / kommer op igen"
+                      checked={notifEnabled}
+                      onChange={(_, d) => setNotifEnabled(Boolean(d.checked))}
+                    />
+                  </Form.Field>
+                  <Form.Input
+                    label="Kanal-ID (valgfrit — standard er integrationens kanal)"
+                    placeholder="Tom = standardkanal fra Settings"
+                    value={channelOverrideStr}
+                    onChange={(e) => setChannelOverrideStr(e.target.value)}
+                    style={{ maxWidth: "420px" }}
+                    input={{
+                      style: {
+                        backgroundColor: "#091413",
+                        color: "#B0E4CC",
+                        border: "1px solid #2f6d59",
+                      },
+                    }}
+                  />
+                </Form>
+              )}
+            </div>
 
-      <Modal.Actions style={{ backgroundColor: "#091413", borderTop: "1px solid #2f6d59" }}>
-        <Button onClick={onClose}>
-          Luk
-        </Button>
-        <Button onClick={() => handleDelete(monitor)} negative disabled={loading}>
-          Slet Website
-        </Button>
-        <Button
-          onClick={() => handleSave(monitor)}
-          primary
-          disabled={loading || !canSave}
-          style={{ backgroundColor: "#1F8B68", borderColor: "#2f6d59" }}
-        >
-          Gem
-        </Button>
-      </Modal.Actions>
-    </Modal>
-    )}
+            <Cards items={items} />
+            <StackedTimingChart data={chartMonitor} />
+          </Modal.Content>
+
+          <Modal.Actions
+            style={{ backgroundColor: "#091413", borderTop: "1px solid #2f6d59" }}
+          >
+            <Button onClick={onClose}>Luk</Button>
+            <Button onClick={() => handleDelete(monitor)} negative disabled={loading}>
+              Slet Website
+            </Button>
+            <Button
+              onClick={() => handleSave(monitor)}
+              primary
+              disabled={loading || !canSave}
+              style={{ backgroundColor: "#1F8B68", borderColor: "#2f6d59" }}
+            >
+              Gem
+            </Button>
+          </Modal.Actions>
+        </Modal>
+      )}
     </>
   );
 }

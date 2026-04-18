@@ -78,6 +78,9 @@ Body:
 { "guildId": "1234567890", "defaultChannelId": "1234567890", "enabled": true }
 ```
 
+### GET /api/discord/websites/{websiteId}/notifications
+Returnerer `notificationEnabled`, `channelIdOverride` for monitoren (eller standardværdier hvis ingen række endnu).
+
 ### PUT /api/discord/websites/{websiteId}/notifications
 Aktiverer notifikationer pr. monitor (påkrævet for at få DOWN/RECOVERED alerts). Valgfri kanal-override.
 

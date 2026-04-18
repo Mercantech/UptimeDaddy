@@ -111,6 +111,42 @@ namespace UptimeDaddy.API.Controllers
             });
         }
 
+        [HttpGet("websites/{websiteId:long}/notifications")]
+        public async Task<IActionResult> GetWebsiteNotifications(long websiteId)
+        {
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized("Kunne ikke finde bruger-id i token.");
+            }
+
+            var websiteExists = await _db.Websites.AsNoTracking()
+                .AnyAsync(w => w.Id == websiteId && w.UserId == userId);
+            if (!websiteExists)
+            {
+                return NotFound("Website blev ikke fundet.");
+            }
+
+            var sub = await _db.DiscordMonitorSubscriptions.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.WebsiteId == websiteId);
+
+            if (sub == null)
+            {
+                return Ok(new
+                {
+                    websiteId,
+                    notificationEnabled = false,
+                    channelIdOverride = (string?)null
+                });
+            }
+
+            return Ok(new
+            {
+                websiteId = sub.WebsiteId,
+                notificationEnabled = sub.NotificationEnabled,
+                channelIdOverride = sub.ChannelIdOverride
+            });
+        }
+
         [HttpPut("websites/{websiteId:long}/notifications")]
         public async Task<IActionResult> UpsertWebsiteNotifications(
             long websiteId,
