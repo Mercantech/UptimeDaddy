@@ -144,7 +144,7 @@ function App() {
 						}}
 					>
 						<a
-							href="https://www.youtube.com/watch?v=Hbqz2iEZN10"
+							href="https://youtu.be/Hbqz2iEZN10?t=248"
 							target="_blank"
 							rel="noopener noreferrer"
 							style={{ color: "#6d9084", textDecoration: "underline" }}
