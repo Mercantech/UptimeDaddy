@@ -38,10 +38,10 @@ The root [docker-compose.yml](../docker-compose.yml) brings up PostgreSQL, MQTT 
 The API container does **not** run EF migrations on startup. After copying [.env.example](../.env.example) to `.env` at the repo root:
 
 1. Start Postgres (or the full stack): `docker compose up -d postgres`
-2. From `Backend/UptimeDaddy.API`, apply migrations to the Postgres instance mapped on `localhost:5432`:
+2. From `Backend/UptimeDaddy.API`, apply migrations to the Postgres instance reachable on `localhost`. The compose file publishes Postgres on **`POSTGRES_PUBLISH_PORT`** (default **35432** on the host to avoid conflicting with another PostgreSQL on 5432). Adjust `Port=` if you override `POSTGRES_PUBLISH_PORT` in `.env`:
 
    ```
-   dotnet ef database update --project UptimeDaddy.API --startup-project UptimeDaddy.API --connection "Host=localhost;Port=5432;Database=uptimedaddy;Username=uptimedaddy;Password=YOUR_POSTGRES_PASSWORD"
+   dotnet ef database update --project UptimeDaddy.API --startup-project UptimeDaddy.API --connection "Host=localhost;Port=35432;Database=uptimedaddy;Username=uptimedaddy;Password=YOUR_POSTGRES_PASSWORD"
    ```
 
    Use the same password as `POSTGRES_PASSWORD` in `.env`.
