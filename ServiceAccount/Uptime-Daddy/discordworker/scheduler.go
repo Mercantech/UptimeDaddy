@@ -75,14 +75,14 @@ WHERE enabled = TRUE`)
 			continue
 		}
 
-		body, err := buildSummaryReport(ctx, pool, userID, nil, 24*time.Hour)
+		title := fmt.Sprintf("📊 Planlagt rapport · `%s` · #%d", reportType, id)
+		embeds, err := buildSummaryReportEmbeds(ctx, pool, userID, nil, 24*time.Hour, title)
 		if err != nil {
 			log.Printf("schedule %d build report: %v", id, err)
 			continue
 		}
 
-		hdr := fmt.Sprintf("**Planlagt rapport** (`%s`, schedule %d)\n\n", reportType, id)
-		if err := sendDiscordMessage(session, ch.ChannelID, hdr+body); err != nil {
+		if err := sendDiscordRich(session, ch.ChannelID, "", embeds); err != nil {
 			st.fail()
 			log.Printf("schedule %d discord: %v", id, err)
 			continue

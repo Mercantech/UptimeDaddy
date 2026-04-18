@@ -290,11 +290,11 @@ func handleReportRequest(ctx context.Context, pool *pgxpool.Pool, dg *discordgo.
 		return err
 	}
 
-	body, err := buildSummaryReport(ctx, pool, ev.WorkspaceID, ev.WebsiteIDs, 24*time.Hour)
+	title := fmt.Sprintf("📊 Manuel rapport · `%s`", ev.ReportType)
+	embeds, err := buildSummaryReportEmbeds(ctx, pool, ev.WorkspaceID, ev.WebsiteIDs, 24*time.Hour, title)
 	if err != nil {
 		return err
 	}
 
-	hdr := fmt.Sprintf("**Manuel rapport** (`%s`)\n\n", ev.ReportType)
-	return sendDiscordMessage(dg, ch.ChannelID, hdr+body)
+	return sendDiscordRich(dg, ch.ChannelID, "", embeds)
 }

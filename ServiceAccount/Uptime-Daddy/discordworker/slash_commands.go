@@ -172,15 +172,14 @@ LIMIT 1`, i.GuildID).Scan(&workspaceID, &defaultCh)
 		return
 	}
 
-	body, err := buildSummaryReport(ctx, pool, workspaceID, nil, 24*time.Hour)
+	title := fmt.Sprintf("📊 Slash rapport · workspace `%d`", workspaceID)
+	embeds, err := buildSummaryReportEmbeds(ctx, pool, workspaceID, nil, 24*time.Hour, title)
 	if err != nil {
 		editSlashError(s, i, fmt.Sprintf("Could not build report: %v", err))
 		return
 	}
 
-	hdr := fmt.Sprintf("**Slash report** (workspace %d)\n\n", workspaceID)
-	full := hdr + body
-	if err := sendDiscordMessage(s, strings.TrimSpace(defaultCh), full); err != nil {
+	if err := sendDiscordRich(s, strings.TrimSpace(defaultCh), "", embeds); err != nil {
 		editSlashError(s, i, fmt.Sprintf("Could not post to the channel: %v", err))
 		return
 	}

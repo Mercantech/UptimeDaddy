@@ -3,20 +3,32 @@ package discordworker
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func buildSummaryReport(
+// Embed-farve matcher frontend-akcent (--grøn/teal typisk omkring #408A71).
+const embedColorUptimeDaddy = 0x408A71
+
+type reportSiteRow struct {
+	ID       int64
+	URL      string
+	Checks   int64
+	UpChecks int64
+}
+
+func querySummaryReportRows(
 	ctx context.Context,
 	pool *pgxpool.Pool,
 	userID int64,
 	websiteIDs []int64,
 	window time.Duration,
-) (string, error) {
+) ([]reportSiteRow, error) {
 	from := time.Now().UTC().Add(-window)
 	var rows pgx.Rows
 	var err error
@@ -44,34 +56,196 @@ ORDER BY w.id`
 		rows, err = pool.Query(ctx, q, from, userID, websiteIDs)
 	}
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer rows.Close()
 
-	var b strings.Builder
-	fmt.Fprintf(&b, "**UptimeDaddy rapport** (sidste %s, UTC)\n", window.String())
-	fmt.Fprintf(&b, "Workspace/bruger-id: `%d`\n\n", userID)
-
-	any := false
+	var out []reportSiteRow
 	for rows.Next() {
-		any = true
-		var id int64
-		var url string
-		var checks, upChecks int64
-		if err := rows.Scan(&id, &url, &checks, &upChecks); err != nil {
-			return "", err
+		var r reportSiteRow
+		if err := rows.Scan(&r.ID, &r.URL, &r.Checks, &r.UpChecks); err != nil {
+			return nil, err
 		}
-		uptimePct := 0.0
-		if checks > 0 {
-			uptimePct = (float64(upChecks) / float64(checks)) * 100
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+func uptimeStatusEmoji(pct float64) string {
+	switch {
+	case pct >= 99.5:
+		return "🟢"
+	case pct >= 90:
+		return "🟡"
+	default:
+		return "🔴"
+	}
+}
+
+// shortSiteLabel viser host + evt. path (uden skema), som i dashboard — fx cedce.eu/webinar/
+func shortSiteLabel(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "—"
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		if len(raw) > 72 {
+			return raw[:69] + "…"
 		}
-		fmt.Fprintf(&b, "• `%s` (id %d): %.1f%% uptime (%d/%d checks)\n", url, id, uptimePct, upChecks, checks)
+		return raw
 	}
-	if err := rows.Err(); err != nil {
-		return "", err
+	if u.Host == "" && strings.Contains(raw, ".") {
+		u2, err2 := url.Parse("https://" + strings.TrimPrefix(strings.TrimPrefix(raw, "//"), "http:"))
+		if err2 == nil && u2.Host != "" {
+			u = u2
+		}
 	}
-	if !any {
-		b.WriteString("_Ingen websites fundet for rapporten._\n")
+	if u.Host == "" {
+		if len(raw) > 72 {
+			return raw[:69] + "…"
+		}
+		return raw
 	}
-	return b.String(), nil
+	host := u.Host
+	path := strings.TrimSuffix(u.Path, "/")
+	if path != "" && path != "/" {
+		s := host + u.Path
+		s = strings.TrimSuffix(s, "/")
+		if len(s) > 80 {
+			return s[:77] + "…"
+		}
+		return s
+	}
+	if len(host) > 80 {
+		return host[:77] + "…"
+	}
+	return host
+}
+
+func embedFieldName(emoji, label string) string {
+	s := emoji + " " + label
+	if len(s) > 256 {
+		return s[:253] + "…"
+	}
+	return s
+}
+
+func embedFieldValue(uptimePct float64, upChecks, checks, id int64) string {
+	s := fmt.Sprintf(
+		"**%.1f%%** uptime · `%d` / `%d` checks · id `%d`",
+		uptimePct, upChecks, checks, id,
+	)
+	if len(s) > 1024 {
+		s = s[:1021] + "…"
+	}
+	return s
+}
+
+const maxEmbedFields = 25 // Discord hard limit pr. embed
+
+func buildSummaryEmbeds(
+	rows []reportSiteRow,
+	embedTitle string,
+	window time.Duration,
+	userID int64,
+) []*discordgo.MessageEmbed {
+	meta := fmt.Sprintf(
+		"Sidste **%s** · UTC · workspace `%d`",
+		formatDurationHuman(window),
+		userID,
+	)
+
+	if len(rows) == 0 {
+		return []*discordgo.MessageEmbed{
+			{
+				Title:       embedTitle,
+				Description: meta + "\n\n_Ingen websites i vinduet — tilføj monitors eller vent på målinger._",
+				Color:       embedColorUptimeDaddy,
+				Footer:      &discordgo.MessageEmbedFooter{Text: "Uptime Daddy"},
+			},
+		}
+	}
+
+	var embeds []*discordgo.MessageEmbed
+	totalSites := len(rows)
+	for offset := 0; offset < len(rows); offset += maxEmbedFields {
+		end := offset + maxEmbedFields
+		if end > len(rows) {
+			end = len(rows)
+		}
+		chunk := rows[offset:end]
+		fields := make([]*discordgo.MessageEmbedField, 0, len(chunk))
+		for _, r := range chunk {
+			uptimePct := 0.0
+			if r.Checks > 0 {
+				uptimePct = (float64(r.UpChecks) / float64(r.Checks)) * 100
+			}
+			em := uptimeStatusEmoji(uptimePct)
+			fields = append(fields, &discordgo.MessageEmbedField{
+				Name:   embedFieldName(em, shortSiteLabel(r.URL)),
+				Value:  embedFieldValue(uptimePct, r.UpChecks, r.Checks, r.ID),
+				Inline: true,
+			})
+		}
+
+		e := &discordgo.MessageEmbed{
+			Color:  embedColorUptimeDaddy,
+			Fields: fields,
+		}
+		if offset == 0 {
+			e.Title = embedTitle
+			e.Description = meta
+		} else {
+			e.Title = "… flere monitors"
+			e.Description = "_Samme rapport — flere rækker._"
+		}
+		if end >= totalSites {
+			e.Footer = &discordgo.MessageEmbedFooter{
+				Text: fmt.Sprintf("Uptime Daddy · %d monitor%s", totalSites, pluralS(totalSites)),
+			}
+		}
+		embeds = append(embeds, e)
+	}
+	return embeds
+}
+
+func pluralS(n int) string {
+	if n == 1 {
+		return ""
+	}
+	return "s"
+}
+
+// formatDurationHuman giver kortere vinduestekst end Go's default (fx "24h" i stedet for "24h0m0s").
+func formatDurationHuman(d time.Duration) string {
+	if d <= 0 {
+		return "0"
+	}
+	if d >= time.Hour && d%time.Hour == 0 {
+		return fmt.Sprintf("%dh", int(d/time.Hour))
+	}
+	if d >= time.Minute && d%time.Minute == 0 {
+		return fmt.Sprintf("%dm", int(d/time.Minute))
+	}
+	if d < time.Minute {
+		return d.Round(time.Second).String()
+	}
+	return d.Round(time.Minute).String()
+}
+
+// buildSummaryReportEmbeds henter data og bygger ét eller flere embeds (chunk ved >25 sites).
+func buildSummaryReportEmbeds(
+	ctx context.Context,
+	pool *pgxpool.Pool,
+	userID int64,
+	websiteIDs []int64,
+	window time.Duration,
+	embedTitle string,
+) ([]*discordgo.MessageEmbed, error) {
+	rows, err := querySummaryReportRows(ctx, pool, userID, websiteIDs, window)
+	if err != nil {
+		return nil, err
+	}
+	return buildSummaryEmbeds(rows, embedTitle, window, userID), nil
 }
