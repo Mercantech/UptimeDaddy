@@ -1,3 +1,6 @@
+require "faraday"
+require "faraday/follow_redirects"
+
 class FaradayService
   attr_accessor :destanation_path
 
@@ -40,9 +43,9 @@ class FaradayService
 
   def faraday_client
     @faraday_client ||= begin
-      Faraday.new do |faraday|
+      ::Faraday.new do |faraday|
         faraday.response :follow_redirects
-        faraday.adapter Faraday.default_adapter
+        faraday.adapter ::Faraday.default_adapter
         faraday.options.timeout = 10
         faraday.options.open_timeout = 5
       end

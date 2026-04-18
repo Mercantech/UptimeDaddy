@@ -12,6 +12,10 @@
 # the additional setup, and require it from the spec files that actually need
 # it.
 #
+
+# Stdlib/bruger til RSpec doubles (fx instance_double(Logger)).
+require "logger"
+
 require "webmock/rspec"
 
 # Ingen utilsigtede netværkskald i tests (Faraday/WebMock).
