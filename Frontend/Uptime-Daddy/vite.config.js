@@ -17,5 +17,9 @@ export default defineConfig({
     host: true,
     // Bag Cloudflare Tunnel / reverse proxy: tillad det Host-header edge sender (preview er kun statisk bundle)
     allowedHosts: true,
+    // Undgå at browser/edge holder fast i gammelt index.html + gamle hashed assets efter deploy
+    headers: {
+      'Cache-Control': 'no-store',
+    },
   },
 })

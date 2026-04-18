@@ -80,6 +80,20 @@ function App() {
 				<SearchWebsite onWebsiteAdded={handleWebsiteDataChanged} />
 				<Cards items={cards} />
 				<Table refreshSignal={refreshSignal} onDataChanged={handleWebsiteDataChanged} />
+				{import.meta.env.VITE_BUILD_ID ? (
+					<div
+						style={{
+							textAlign: "center",
+							marginTop: "1.5rem",
+							fontSize: "0.72rem",
+							color: "#5c7a70",
+							letterSpacing: "0.04em",
+						}}
+						title="Hvis denne ikke matcher efter deploy, får browseren/CDN stadig en gammel bundle."
+					>
+						Frontend-udgave: {import.meta.env.VITE_BUILD_ID}
+					</div>
+				) : null}
 			</Container>
 		</>
 	);

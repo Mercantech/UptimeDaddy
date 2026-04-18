@@ -9,8 +9,11 @@ COPY . .
 
 ARG VITE_ACCOUNTS_URL=http://localhost:6969/accounts
 ARG VITE_API_URL=http://localhost:8080/api
+# Sæt unikt pr. deploy i Dokploy/CI (fx git SHA eller $DATE) så Vite altid laver ny bundle — ellers kan Docker genbruge et lag og I ser gammel UI.
+ARG VITE_BUILD_ID=
 ENV VITE_ACCOUNTS_URL=$VITE_ACCOUNTS_URL
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_BUILD_ID=$VITE_BUILD_ID
 
 RUN npm run build
 

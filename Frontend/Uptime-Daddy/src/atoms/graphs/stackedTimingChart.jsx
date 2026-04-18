@@ -40,10 +40,14 @@ const STACK_META = [
 
 function StackedTimingChart({ data }) {
   const { measurements = [] } = data ?? {};
+  /** null = felt midlertidigt tomt (backspace); ellers tal som før. */
   const [numMeasurements, setNumMeasurements] = useState(5);
 
+  const effectiveRaw =
+    numMeasurements === null ? 5 : Math.max(1, numMeasurements || 1);
+
   const cappedNum = Math.min(
-    Math.max(1, numMeasurements || 1),
+    effectiveRaw,
     Math.max(1, measurements.length)
   );
 
@@ -108,8 +112,15 @@ function StackedTimingChart({ data }) {
           <label style={{ color: "#B0E4CC" }}>Antal seneste målinger</label>
           <Input
             type="number"
-            value={cappedNum}
-            onChange={(e, { value }) => setNumMeasurements(parseInt(value, 10) || 5)}
+            value={numMeasurements === null ? "" : cappedNum}
+            onChange={(e, { value }) => {
+              if (value === "") {
+                setNumMeasurements(null);
+                return;
+              }
+              const n = parseInt(value, 10);
+              if (Number.isFinite(n)) setNumMeasurements(n);
+            }}
             min={1}
             max={measurements.length}
             style={{ backgroundColor: "#0B1D19", border: "1px solid #2f6d59", color: "#B0E4CC" }}

@@ -1,4 +1,4 @@
-import { useState, useEffect }            from "react";
+import { useState, useEffect, useMemo }   from "react";
 import { Modal, Button, Input }           from "semantic-ui-react";
 import Cards                              from "../../atoms/cards/cards";
 import statusIcon                         from "../../util/status/statusIcon.jsx";
@@ -16,13 +16,26 @@ function MonitorModal({ monitor, onClose, onDataChanged }) {
     return Number(website.intervalTime ?? 60);
   };
 
-  const [editTime, setEditTime] = useState(() => getMonitorInterval(monitor));
+  /** Streng i feltet så brugeren kan slette alt midlertidigt uden at React “snapper” tilbage. */
+  const [intervalStr, setIntervalStr] = useState(() =>
+    monitor ? String(getMonitorInterval(monitor)) : "60"
+  );
 
   useEffect(() => {
     if (monitor) {
-      setEditTime(getMonitorInterval(monitor));
+      setIntervalStr(String(getMonitorInterval(monitor)));
     }
   }, [monitor]);
+
+  const parsedInterval = useMemo(() => {
+    const t = intervalStr.trim();
+    if (t === "") return null;
+    const n = parseInt(t, 10);
+    if (!Number.isFinite(n)) return null;
+    return Math.max(1, n);
+  }, [intervalStr]);
+
+  const displayInterval = parsedInterval ?? (monitor ? getMonitorInterval(monitor) : 60);
 
   if (!monitor && !loading) return null;
 
@@ -30,7 +43,7 @@ function MonitorModal({ monitor, onClose, onDataChanged }) {
 
   const items = [
     { header: latest ? String(latest.statusCode) : "-", description: "HTTP-status", icon: statusIcon(latest?.statusCode), accent: accents.statusAccent(latest?.statusCode) },
-    { header: formatIntervalSeconds(editTime), description: "Ping-interval (redigér ovenfor)", icon: "refresh", accent: "blue" },
+    { header: formatIntervalSeconds(displayInterval), description: "Ping-interval (redigér ovenfor)", icon: "refresh", accent: "blue" },
     { header: latest?.dnsLookupMs != null ? `${latest.dnsLookupMs} ms` : "-", description: "DNS-opslag", icon: "search", accent: accents.dnsAccent(latest?.dnsLookupMs) },
     { header: latest?.connectMs != null ? `${latest.connectMs} ms` : "-", description: "Forbindelse", icon: "plug", accent: accents.connectAccent(latest?.connectMs) },
     { header: latest?.tlsHandshakeMs != null ? `${latest.tlsHandshakeMs} ms` : "-", description: "TLS-handtryk", icon: "lock", accent: accents.tlsAccent(latest?.tlsHandshakeMs) },
@@ -61,11 +74,9 @@ function MonitorModal({ monitor, onClose, onDataChanged }) {
     }
   };
 
-  const handleUpdate = async (website, newTime) => {
-    const interval = Math.max(1, Math.floor(Number(newTime)));
-    if (!Number.isFinite(interval)) {
-      return;
-    }
+  const handleUpdate = async (website) => {
+    if (parsedInterval === null) return;
+    const interval = parsedInterval;
 
     setLoading(true);
     let updateSucceeded = false;
@@ -77,7 +88,7 @@ function MonitorModal({ monitor, onClose, onDataChanged }) {
         body: { intervalTime: interval },
       });
 
-      setEditTime(interval);
+      setIntervalStr(String(interval));
       updateSucceeded = true;
       onDataChanged?.();
       await new Promise((resolve) => setTimeout(resolve, 400));
@@ -102,8 +113,8 @@ function MonitorModal({ monitor, onClose, onDataChanged }) {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
           <span style={{ color: "#B0E4CC", fontSize: "0.95rem", maxWidth: "320px", textAlign: "right" }}>
             <strong style={{ color: "#408A71" }}>Ping-interval:</strong>{" "}
-            {formatIntervalSeconds(editTime)}
-            <span style={{ opacity: 0.75, fontSize: "0.85em" }}> ({editTime} sek.)</span>
+            {formatIntervalSeconds(displayInterval)}
+            <span style={{ opacity: 0.75, fontSize: "0.85em" }}> ({displayInterval} sek.)</span>
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" }}>
             <Input
@@ -111,19 +122,15 @@ function MonitorModal({ monitor, onClose, onDataChanged }) {
               type="number"
               min={1}
               step={1}
-              value={Number.isFinite(editTime) ? editTime : ""}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                if (e.target.value === "" || !Number.isFinite(v)) return;
-                setEditTime(Math.max(1, Math.floor(v)));
-              }}
+              value={intervalStr}
+              onChange={(e) => setIntervalStr(e.target.value)}
               label={{ basic: true, content: "Sekunder" }}
               labelPosition="right"
               placeholder="fx 300"
               style={{ width: "200px", backgroundColor: "#0B1D19", border: "1px solid #2f6d59", borderRadius: "6px", color: "#B0E4CC" }}
               input={{ style: { backgroundColor: "#0B1D19", color: "#B0E4CC", borderRadius: "6px", padding: "10px" } }}
             />
-            <Button onClick={() => handleUpdate(monitor, editTime)} primary disabled={loading} style={{ minHeight: "47px", backgroundColor: "#1F8B68", borderColor: "#2f6d59" }}>
+            <Button onClick={() => handleUpdate(monitor)} primary disabled={loading || parsedInterval === null} style={{ minHeight: "47px", backgroundColor: "#1F8B68", borderColor: "#2f6d59" }}>
               Gem
             </Button>
           </div>
