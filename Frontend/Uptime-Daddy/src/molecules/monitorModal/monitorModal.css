@@ -1,0 +1,179 @@
+/* Discord-alarm: høj kontrast + tydelig hierarki (matcher mørk teal-dashboard) */
+
+.monitor-modal-discord {
+  position: relative;
+  margin-bottom: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid #2f6d59;
+  background: linear-gradient(145deg, #0c221e 0%, #0b1d19 45%, #0a1816 100%);
+  box-shadow:
+    0 0 0 1px rgba(64, 138, 113, 0.12),
+    0 8px 28px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.monitor-modal-discord__accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, #5865f2 0%, #408a71 55%, #2f6d59 100%);
+  border-radius: 12px 0 0 12px;
+}
+
+.monitor-modal-discord__inner {
+  position: relative;
+  padding: 1rem 1.1rem 1.1rem 1.35rem;
+}
+
+.monitor-modal-discord__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.monitor-modal-discord__icon-wrap {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #5865f2 0%, #4752c4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(88, 101, 242, 0.35);
+}
+
+.monitor-modal-discord__title-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.monitor-modal-discord__title {
+  margin: 0 0 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #c5ebe0;
+  letter-spacing: 0.02em;
+}
+
+.monitor-modal-discord__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.monitor-modal-discord__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(64, 138, 113, 0.2);
+  color: #b0e4cc;
+  border: 1px solid rgba(47, 109, 89, 0.65);
+}
+
+.monitor-modal-discord__badge--muted {
+  background: rgba(9, 20, 19, 0.85);
+  color: #8fb8a8;
+}
+
+.monitor-modal-discord__hint {
+  margin: 0 0 1rem;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: #a8d4c4;
+}
+
+.monitor-modal-discord__hint strong {
+  color: #e8fff6;
+}
+
+.monitor-modal-discord__hint a {
+  font-weight: 600;
+}
+
+.monitor-modal-discord__toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 10px;
+  background: rgba(9, 20, 19, 0.75);
+  border: 1px solid rgba(47, 109, 89, 0.55);
+}
+
+.monitor-modal-discord__toggle-row .ui.toggle.checkbox {
+  width: 100%;
+}
+
+/* Semantic toggle: lys label-tekst + brandfarve når aktiv */
+.monitor-modal-discord .ui.toggle.checkbox label {
+  color: #e8fff6 !important;
+  font-size: 0.92rem !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+  padding-left: 3.6rem !important;
+}
+
+.monitor-modal-discord .ui.toggle.checkbox input:checked ~ label:before {
+  background: #408a71 !important;
+  border-color: #4ea584 !important;
+}
+
+.monitor-modal-discord .ui.toggle.checkbox input ~ label:before {
+  background: #1a302b !important;
+  border-color: #2f6d59 !important;
+}
+
+.monitor-modal-discord__field-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #b0e4cc;
+}
+
+.monitor-modal-discord__field-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.76rem;
+  color: #8fb8a8;
+  line-height: 1.4;
+}
+
+.monitor-modal-discord__input.ui.input > input {
+  background: #091413 !important;
+  color: #e8fff6 !important;
+  border: 1px solid #2f6d59 !important;
+  border-radius: 8px !important;
+}
+
+.monitor-modal-discord__input.ui.input > input:focus {
+  border-color: #4ea584 !important;
+  box-shadow: 0 0 0 1px #4ea584 inset !important;
+}
+
+.monitor-modal-discord__input.ui.input > input::placeholder {
+  color: #6d9084 !important;
+  opacity: 1 !important;
+}
+
+.monitor-modal-discord__loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #8fb8a8;
+  font-size: 0.86rem;
+  margin: 0.5rem 0 0;
+}
