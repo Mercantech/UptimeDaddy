@@ -1,4 +1,4 @@
-import { useState, useEffect } 				from "react";
+import { useState, useEffect, useCallback } 				from "react";
 import 										"./style.css";
 import { Table, Label, Icon } 				from "semantic-ui-react";
 import MonitorModal 						from "../monitorModal/index.jsx";
@@ -38,6 +38,17 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 		if (!userId) return;
 		fetchWebsiteData();
 	}, [userId, refreshSignal]);
+
+	const patchMonitor = useCallback((updated) => {
+		setWebsiteData((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
+		setSelected((prev) => (prev?.id === updated.id ? updated : prev));
+	}, []);
+
+	useEffect(() => {
+		if (!selected?.id) return;
+		const updated = websiteData.find((w) => w.id === selected.id);
+		if (updated) setSelected(updated);
+	}, [websiteData, selected?.id]);
 
 	return (
 		<>
@@ -111,6 +122,7 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 				monitor={selected}
 				onClose={() => setSelected(null)}
 				onDataChanged={onDataChanged}
+				onMonitorPatched={patchMonitor}
 			/>
 		</>
 	);
