@@ -46,6 +46,27 @@ body {
   box-shadow: 0 0 0 1px #4ea584 inset !important;
 }
 
+/* Dashboard-builder: Semantic "inverted" form giver ofte lys baggrund på Input — tving mørk kontrast */
+.ui.input.dashboard-builder-id-input input[type="text"],
+.ui.input.dashboard-builder-id-input input {
+  background: #0f1f1c !important;
+  color: #e8fff6 !important;
+  border: 1px solid #2f6d59 !important;
+  font-size: 1.05rem !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+}
+
+.ui.input.dashboard-builder-id-input input::placeholder {
+  color: #7a9e94 !important;
+  opacity: 1 !important;
+}
+
+.ui.input.dashboard-builder-id-input input:focus {
+  border-color: #4ea584 !important;
+  box-shadow: 0 0 0 1px #4ea584 inset !important;
+}
+
 input, button, textarea, select, header, p {
   font-family: inherit;
 }

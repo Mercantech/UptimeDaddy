@@ -35,7 +35,7 @@ export default function Router() {
             </PublicOnlyRoute>
           }
         />
-        <Route path="/b/:token" element={<PublicBoardPage />} />
+        <Route path="/b/:boardId" element={<PublicBoardPage />} />
         <Route
           path="/"
           element={

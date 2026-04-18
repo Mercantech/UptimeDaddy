@@ -11,16 +11,16 @@ import TimingCell from "../../atoms/timingCell/TimingCell.jsx";
 const POLL_MS = Number(import.meta.env.VITE_DASHBOARD_POLL_MS) || 30_000;
 
 function PublicBoardPage() {
-  const { token } = useParams();
+  const { boardId } = useParams();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!boardId) return;
     try {
       const json = await fetchCall({
-        url: `${API_URL}/public/boards/${encodeURIComponent(token)}`,
+        url: `${API_URL}/public/boards/${encodeURIComponent(boardId)}`,
         withAuth: false,
       });
       setData(json);
@@ -31,7 +31,7 @@ function PublicBoardPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [boardId]);
 
   useEffect(() => {
     setLoading(true);
@@ -39,15 +39,15 @@ function PublicBoardPage() {
   }, [load]);
 
   useEffect(() => {
-    if (!token || POLL_MS < 5000) return;
+    if (!boardId || POLL_MS < 5000) return;
     const id = window.setInterval(() => {
       if (document.visibilityState !== "visible") return;
       load();
     }, POLL_MS);
     return () => window.clearInterval(id);
-  }, [token, load]);
+  }, [boardId, load]);
 
-  if (!token) {
+  if (!boardId) {
     return (
       <Container style={{ marginTop: "6rem" }}>
         <Message negative>Manglende link.</Message>

@@ -24,7 +24,6 @@ function DashboardBuilderPage() {
   const [selectedBoardId, setSelectedBoardId] = useState(null);
   const [boardName, setBoardName] = useState("");
   const [isPublished, setIsPublished] = useState(false);
-  const [shareToken, setShareToken] = useState("");
   const [orderedItems, setOrderedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,7 +52,6 @@ function DashboardBuilderPage() {
     const d = await fetchCall({ url: `${API_URL}/dashboard-boards/${id}` });
     setBoardName(d.name ?? "");
     setIsPublished(Boolean(d.isPublished));
-    setShareToken(d.shareToken ?? "");
     const items = Array.isArray(d.items) ? [...d.items] : [];
     items.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     setOrderedItems(
@@ -89,7 +87,6 @@ function DashboardBuilderPage() {
     if (!selectedBoardId) {
       setBoardName("");
       setIsPublished(false);
-      setShareToken("");
       setOrderedItems([]);
       return;
     }
@@ -211,8 +208,9 @@ function DashboardBuilderPage() {
   };
 
   const copyShareLink = async () => {
-    if (!shareToken) return;
-    const url = `${window.location.origin}/b/${shareToken}`;
+    const segment = boardName.trim();
+    if (!segment) return;
+    const url = `${window.location.origin}/b/${encodeURIComponent(segment.toUpperCase())}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopyMsg({ info: true, text: "Link kopieret til udklipsholder." });
@@ -232,7 +230,9 @@ function DashboardBuilderPage() {
     );
   }
 
-  const publicUrl = shareToken ? `${window.location.origin}/b/${shareToken}` : "";
+  const publicUrl = boardName.trim()
+    ? `${window.location.origin}/b/${encodeURIComponent(boardName.trim().toUpperCase())}`
+    : "";
 
   return (
     <>
@@ -275,17 +275,19 @@ function DashboardBuilderPage() {
                     Dashboard-ID (unikt navn)
                   </label>
                   <p style={{ color: "#8aa89c", fontSize: "0.88rem", margin: "0 0 0.75rem", lineHeight: 1.45 }}>
-                    Dette er dit boards <strong style={{ color: "#B0E4CC" }}>ID</strong> på din konto (gemmes som små bogstaver).
-                    To boards må ikke have samme ID — API returnerer fejl hvis navnet allerede findes.
+                    Dette er dit boards <strong style={{ color: "#B0E4CC" }}>ID</strong> i det offentlige link{" "}
+                    <code style={{ color: "#9bcbb8" }}>/b/DIT-ID</code> (gemmes som små bogstaver; link virker med
+                    store/små bogstaver).
+                    På tværs af alle brugere må kun <strong style={{ color: "#B0E4CC" }}>ét publiceret</strong> board have
+                    dette ID.
                   </p>
                   <Input
                     fluid
                     size="large"
-                    placeholder="fx produktion, team-a, kunde-demo"
+                    className="dashboard-builder-id-input"
+                    placeholder="fx MAGS, produktion, team-a"
                     value={boardName}
                     onChange={(e) => setBoardName(e.target.value)}
-                    style={{ backgroundColor: "#091413", color: "#e8fff6", fontSize: "1.05rem" }}
-                    input={{ style: { color: "#e8fff6", fontWeight: 600 } }}
                   />
                   {selectedBoardId ? (
                     <p style={{ color: "#6d9084", fontSize: "0.82rem", margin: "0.65rem 0 0" }}>

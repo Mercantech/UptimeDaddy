@@ -50,6 +50,13 @@ namespace UptimeDaddy.API.Data
                 .IsUnique()
                 .HasDatabaseName("ix_dashboard_boards_user_id_name_unique");
 
+            // Ét publiceret board pr. offentligt ID (navn), så /b/{id} er entydigt.
+            modelBuilder.Entity<DashboardBoard>()
+                .HasIndex(b => b.Name)
+                .IsUnique()
+                .HasDatabaseName("ix_dashboard_boards_name_published_unique")
+                .HasFilter("is_published = TRUE");
+
             modelBuilder.Entity<DashboardBoardItem>()
                 .HasIndex(i => new { i.DashboardBoardId, i.SortOrder })
                 .HasDatabaseName("ix_dashboard_board_items_board_sort");

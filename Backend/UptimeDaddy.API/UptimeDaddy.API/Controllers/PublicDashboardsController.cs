@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UptimeDaddy.API.Data;
+using UptimeDaddy.API.Models;
 
 namespace UptimeDaddy.API.Controllers
 {
@@ -16,18 +17,42 @@ namespace UptimeDaddy.API.Controllers
             _context = context;
         }
 
-        /// <summary>Offentligt board via delings-token (kræver IsPublished).</summary>
-        [HttpGet("{token}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetPublishedBoard(string token)
+        private static string NormalizeBoardName(string? raw)
         {
-            if (string.IsNullOrWhiteSpace(token))
+            if (string.IsNullOrWhiteSpace(raw))
+                return string.Empty;
+            return raw.Trim().ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// Offentligt board via Dashboard-ID (navn), case-ukælsomt. Kræver IsPublished.
+        /// Understøtter også ældre links med share_token.
+        /// </summary>
+        [HttpGet("{publicId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublishedBoard(string publicId)
+        {
+            if (string.IsNullOrWhiteSpace(publicId))
                 return NotFound();
 
-            var board = await _context.DashboardBoards
-                .AsNoTracking()
-                .Include(b => b.Items)
-                .FirstOrDefaultAsync(b => b.ShareToken == token && b.IsPublished);
+            var normalized = NormalizeBoardName(publicId);
+            DashboardBoard? board = null;
+
+            if (!string.IsNullOrEmpty(normalized))
+            {
+                board = await _context.DashboardBoards
+                    .AsNoTracking()
+                    .Include(b => b.Items)
+                    .FirstOrDefaultAsync(b => b.Name == normalized && b.IsPublished);
+            }
+
+            if (board == null)
+            {
+                board = await _context.DashboardBoards
+                    .AsNoTracking()
+                    .Include(b => b.Items)
+                    .FirstOrDefaultAsync(b => b.ShareToken == publicId && b.IsPublished);
+            }
 
             if (board == null)
                 return NotFound();

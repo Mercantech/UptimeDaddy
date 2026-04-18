@@ -49,6 +49,18 @@ namespace UptimeDaddy.API.Controllers
                     && (!excludeBoardId.HasValue || b.Id != excludeBoardId.Value));
         }
 
+        /// <summary>Andet board har samme navn og er allerede publiceret (entydigt offentligt ID).</summary>
+        private async Task<bool> PublishedBoardNameTakenByOtherAsync(string normalizedName, long excludeBoardId)
+        {
+            if (string.IsNullOrEmpty(normalizedName))
+                return false;
+
+            return await _context.DashboardBoards
+                .AsNoTracking()
+                .AnyAsync(b =>
+                    b.Name == normalizedName && b.IsPublished && b.Id != excludeBoardId);
+        }
+
         [HttpGet]
         public async Task<IActionResult> List()
         {
@@ -171,6 +183,13 @@ namespace UptimeDaddy.API.Controllers
 
             if (await BoardNameTakenAsync(userId, name, board.Id))
                 return Conflict(new { message = $"Dashboard-ID \"{name}\" findes allerede. Vælg et andet navn." });
+
+            if (dto.IsPublished && await PublishedBoardNameTakenByOtherAsync(name, board.Id))
+                return Conflict(new
+                {
+                    message =
+                        "Dette Dashboard-ID bruges allerede af et andet publiceret board. Omdøb dit board eller afpublicér det andet først.",
+                });
 
             var itemDtos = dto.Items ?? new List<DashboardBoardItemUpdateDto>();
             var websiteIds = itemDtos.Select(i => i.WebsiteId).Distinct().ToList();
