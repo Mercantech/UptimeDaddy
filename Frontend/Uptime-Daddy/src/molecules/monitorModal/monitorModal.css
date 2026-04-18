@@ -102,10 +102,12 @@
   font-weight: 600;
 }
 
+/* Toggle + tekst i to kolonner — undgår overlap og Sort tekst fra .ui.modal > .content */
 .monitor-modal-discord__toggle-row {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
   padding: 0.85rem 1rem;
   margin-bottom: 1rem;
   border-radius: 10px;
@@ -113,17 +115,27 @@
   border: 1px solid rgba(47, 109, 89, 0.55);
 }
 
-.monitor-modal-discord__toggle-row .ui.toggle.checkbox {
-  width: 100%;
+.monitor-modal-discord__toggle-rail {
+  flex-shrink: 0;
 }
 
-/* Semantic toggle: lys label-tekst + brandfarve når aktiv */
-.monitor-modal-discord .ui.toggle.checkbox label {
-  color: #e8fff6 !important;
-  font-size: 0.92rem !important;
-  font-weight: 500 !important;
-  line-height: 1.45 !important;
-  padding-left: 3.6rem !important;
+.monitor-modal-discord__toggle-rail .ui.toggle.checkbox {
+  width: auto;
+  min-height: 1.5rem;
+}
+
+/* Skjul evt. tekst i toggle-label uden at skalere ::before (undgå font-size: 0) */
+.monitor-modal-discord__toggle-rail .ui.toggle.checkbox label {
+  position: relative;
+  display: inline-block;
+  text-indent: -9999px;
+  overflow: visible;
+  width: 3.75rem;
+  min-height: 1.5rem;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1.5rem;
+  color: transparent !important;
 }
 
 .monitor-modal-discord .ui.toggle.checkbox input:checked ~ label:before {
@@ -134,6 +146,30 @@
 .monitor-modal-discord .ui.toggle.checkbox input ~ label:before {
   background: #1a302b !important;
   border-color: #2f6d59 !important;
+}
+
+.monitor-modal-discord__toggle-caption {
+  flex: 1;
+  margin: 0 !important;
+  min-width: 0;
+  color: #e8fff6 !important;
+  -webkit-text-fill-color: #e8fff6 !important;
+  font-size: 0.92rem !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+  cursor: pointer;
+  user-select: none;
+}
+
+.monitor-modal-discord__toggle-caption:hover {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.monitor-modal-discord__toggle-caption:focus-visible {
+  outline: 2px solid #4ea584;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .monitor-modal-discord__field-label {

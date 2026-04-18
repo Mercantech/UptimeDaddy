@@ -261,9 +261,14 @@ func handleMonitorStatus(ctx context.Context, pool *pgxpool.Pool, dg *discordgo.
 		title = "🟢 Genoprettet"
 	}
 
+	urlLead := "**URL:**"
+	if fv := EmojiFavicon(); fv != "" {
+		urlLead = fv + " **URL:**"
+	}
 	body := fmt.Sprintf(
-		"%s\n**URL:** %s\n**Website id:** %d\n**Status:** %s → %s (HTTP %d)\n**Responstid:** %.0f ms\n",
-		title,
+		"%s\n%s %s\n**Website id:** %d\n**Status:** %s → %s (HTTP %d)\n**Responstid:** %.0f ms\n",
+		BrandLine(title),
+		urlLead,
 		ev.WebsiteURL,
 		ev.WebsiteID,
 		ev.PrevStatus,
@@ -290,7 +295,7 @@ func handleReportRequest(ctx context.Context, pool *pgxpool.Pool, dg *discordgo.
 		return err
 	}
 
-	title := fmt.Sprintf("📊 Manuel rapport · `%s`", ev.ReportType)
+	title := BrandLine(fmt.Sprintf("Manuel rapport · `%s`", ev.ReportType))
 	embeds, err := buildSummaryReportEmbeds(ctx, pool, ev.WorkspaceID, ev.WebsiteIDs, 24*time.Hour, title)
 	if err != nil {
 		return err

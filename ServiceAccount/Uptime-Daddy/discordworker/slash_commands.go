@@ -93,7 +93,11 @@ func newSlashInteractionHandler(pool *pgxpool.Pool) func(*discordgo.Session, *di
 }
 
 func handleSlashHelp(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	msg := "**UptimeDaddy**\n" +
+	msg := BrandLine("**UptimeDaddy**") + "\n"
+	if li := EmojiLogin(); li != "" {
+		msg += li + " Web-dashboard & login\n"
+	}
+	msg += "\n" +
 		"• `/daddy-report` — 24h summary to your integration default channel.\n" +
 		"• `/daddy-help` — this message.\n" +
 		"• `/daddy-skudud` — shout-out: dev names with GitHub links + YouTube (embeds suppressed), same as the web footer.\n\n" +
@@ -125,8 +129,8 @@ func buildSkudUdMessage() string {
 		nameLinks = append(nameLinks, fmt.Sprintf("[%s](%s)", c.name, c.url))
 	}
 	// Samme som footer: anchor-teksten "Skud ud til udviklerne" peger på YouTube (ikke separat YT-label).
-	return "[Skud ud til udviklerne](" + devYouTubeURL + ")\n\n" +
-		strings.Join(nameLinks, " · ")
+	head := BrandLine("[Skud ud til udviklerne](" + devYouTubeURL + ")")
+	return head + "\n\n" + strings.Join(nameLinks, " · ")
 }
 
 func handleSlashReport(s *discordgo.Session, i *discordgo.InteractionCreate, pool *pgxpool.Pool) {
@@ -172,7 +176,7 @@ LIMIT 1`, i.GuildID).Scan(&workspaceID, &defaultCh)
 		return
 	}
 
-	title := fmt.Sprintf("📊 Slash rapport · workspace `%d`", workspaceID)
+	title := BrandLine(fmt.Sprintf("Slash rapport · workspace `%d`", workspaceID))
 	embeds, err := buildSummaryReportEmbeds(ctx, pool, workspaceID, nil, 24*time.Hour, title)
 	if err != nil {
 		editSlashError(s, i, fmt.Sprintf("Could not build report: %v", err))
@@ -184,7 +188,7 @@ LIMIT 1`, i.GuildID).Scan(&workspaceID, &defaultCh)
 		return
 	}
 
-	confirm := fmt.Sprintf("Report posted in <#%s>.", strings.TrimSpace(defaultCh))
+	confirm := BrandLine(fmt.Sprintf("Report posted in <#%s>.", strings.TrimSpace(defaultCh)))
 	_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{Content: strPtr(confirm)})
 	if err != nil {
 		log.Printf("slash daddy-report: edit response: %v", err)

@@ -75,7 +75,7 @@ WHERE enabled = TRUE`)
 			continue
 		}
 
-		title := fmt.Sprintf("📊 Planlagt rapport · `%s` · #%d", reportType, id)
+		title := BrandLine(fmt.Sprintf("Planlagt rapport · `%s` · #%d", reportType, id))
 		embeds, err := buildSummaryReportEmbeds(ctx, pool, userID, nil, 24*time.Hour, title)
 		if err != nil {
 			log.Printf("schedule %d build report: %v", id, err)

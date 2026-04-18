@@ -439,14 +439,29 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
                 ) : (
                   <>
                     <div className="monitor-modal-discord__toggle-row">
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="monitor-modal-discord__toggle-rail">
                         <Checkbox
                           toggle
-                          label="Send besked til Discord ved fejl og når monitoren er sund igen"
+                          label=" "
                           checked={notifEnabled}
                           onChange={(_, d) => setNotifEnabled(Boolean(d.checked))}
+                          aria-label="Discord-alarm: besked ved fejl og når monitoren er sund igen"
                         />
                       </div>
+                      <p
+                        className="monitor-modal-discord__toggle-caption"
+                        onClick={() => setNotifEnabled((v) => !v)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setNotifEnabled((v) => !v);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                      >
+                        Send besked til Discord ved fejl og når monitoren er sund igen
+                      </p>
                     </div>
 
                     <div>

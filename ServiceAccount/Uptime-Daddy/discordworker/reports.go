@@ -156,13 +156,13 @@ func buildSummaryEmbeds(
 		userID,
 	)
 
-	if len(rows) == 0 {
+		if len(rows) == 0 {
 		return []*discordgo.MessageEmbed{
 			{
 				Title:       embedTitle,
 				Description: meta + "\n\n_Ingen websites i vinduet — tilføj monitors eller vent på målinger._",
 				Color:       embedColorUptimeDaddy,
-				Footer:      &discordgo.MessageEmbedFooter{Text: "Uptime Daddy"},
+				Footer:      &discordgo.MessageEmbedFooter{Text: BrandLine("Uptime Daddy")},
 			},
 		}
 	}
@@ -182,8 +182,9 @@ func buildSummaryEmbeds(
 				uptimePct = (float64(r.UpChecks) / float64(r.Checks)) * 100
 			}
 			em := uptimeStatusEmoji(uptimePct)
+			nameEm := strings.TrimSpace(strings.TrimSpace(EmojiFavicon()) + " " + em)
 			fields = append(fields, &discordgo.MessageEmbedField{
-				Name:   embedFieldName(em, shortSiteLabel(r.URL)),
+				Name:   embedFieldName(nameEm, shortSiteLabel(r.URL)),
 				Value:  embedFieldValue(uptimePct, r.UpChecks, r.Checks, r.ID),
 				Inline: true,
 			})
@@ -197,12 +198,12 @@ func buildSummaryEmbeds(
 			e.Title = embedTitle
 			e.Description = meta
 		} else {
-			e.Title = "… flere monitors"
+			e.Title = BrandLine("… flere monitors")
 			e.Description = "_Samme rapport — flere rækker._"
 		}
 		if end >= totalSites {
 			e.Footer = &discordgo.MessageEmbedFooter{
-				Text: fmt.Sprintf("Uptime Daddy · %d monitor%s", totalSites, pluralS(totalSites)),
+				Text: BrandLine(fmt.Sprintf("Uptime Daddy · %d monitor%s", totalSites, pluralS(totalSites))),
 			}
 		}
 		embeds = append(embeds, e)
