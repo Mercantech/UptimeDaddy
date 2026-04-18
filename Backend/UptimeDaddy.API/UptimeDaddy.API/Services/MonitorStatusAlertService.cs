@@ -80,13 +80,22 @@ namespace UptimeDaddy.API.Services
 
             var prevUp = state.LastIsUp;
 
+            double? downtimeDurationMs = null;
+            if (isUp && !prevUp)
+            {
+                downtimeDurationMs = Math.Max(
+                    0,
+                    (DateTime.UtcNow - state.LastTransitionAt).TotalMilliseconds);
+            }
+
             db.MonitorIncidentEvents.Add(new MonitorIncidentEvent
             {
                 WebsiteId = website.Id,
                 OccurredAt = DateTime.UtcNow,
                 IsUp = isUp,
                 StatusCode = m.StatusCode,
-                TotalTimeMs = m.TotalTimeMs
+                TotalTimeMs = m.TotalTimeMs,
+                DowntimeDurationMs = downtimeDurationMs
             });
 
             state.LastIsUp = isUp;
@@ -140,7 +149,8 @@ namespace UptimeDaddy.API.Services
                 Status = isUp ? "up" : "down",
                 StatusCode = m.StatusCode,
                 OccurredAt = DateTime.UtcNow,
-                TotalTimeMs = m.TotalTimeMs
+                TotalTimeMs = m.TotalTimeMs,
+                DowntimeDurationMs = downtimeDurationMs
             };
 
             await _publisher.PublishMonitorStatusAsync(dto, cancellationToken);

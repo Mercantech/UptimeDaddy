@@ -25,5 +25,9 @@ namespace UptimeDaddy.API.Models
 
         [Column("total_time_ms")]
         public double TotalTimeMs { get; set; }
+
+        /// <summary>Ved genoprettelse (is_up): hvor længe sitet var nede i ms siden sidste ned-overgang.</summary>
+        [Column("downtime_duration_ms")]
+        public double? DowntimeDurationMs { get; set; }
     }
 }

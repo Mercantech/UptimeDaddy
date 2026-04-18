@@ -37,6 +37,28 @@ function formatDa(iso) {
     }
 }
 
+/** Samlet nedetid ved genoprettelse (ms → dansk); ellers null. */
+function formatDowntimeDa(ms) {
+    if (ms == null || typeof ms !== "number" || !Number.isFinite(ms) || ms < 0) return null;
+    const sec = Math.round(ms / 1000);
+    if (sec < 60) return `${Math.max(1, sec)} sek.`;
+    const min = Math.floor(sec / 60);
+    const s = sec % 60;
+    if (min < 60) {
+        if (s < 5) return `${min} min.`;
+        return `${min} min. ${s} sek.`;
+    }
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    if (m === 0) return `${h} t.`;
+    return `${h} t. ${m} min.`;
+}
+
+function downtimeSummary(row) {
+    if (!row.isUp) return "—";
+    return formatDowntimeDa(row.downtimeDurationMs) ?? "—";
+}
+
 export default function IncidentsPage() {
     const authPayload = getAuthPayload();
     const userId = authPayload?.userId;
@@ -129,7 +151,8 @@ export default function IncidentsPage() {
                 </Header>
                 <p className="incidents-lead">
                     Hver række er ét registreret skift (&quot;nede&quot; med HTTP-kode ved fejl, eller
-                    &quot;oppe igen&quot;). Vælg <strong>Kun nedbrud (fejl)</strong> for kun fejl med
+                    &quot;oppe igen&quot;). Ved genoprettelse vises <strong>samlet nedetid</strong> siden
+                    sidste ned-registrering. Vælg <strong>Kun nedbrud (fejl)</strong> for kun fejl med
                     tidsstempel. Historik før incident-log blev aktiveret kan ikke bagudfyldes.
                 </p>
 
@@ -186,6 +209,7 @@ export default function IncidentsPage() {
                                         <Table.HeaderCell>Tidspunkt</Table.HeaderCell>
                                         <Table.HeaderCell>Website</Table.HeaderCell>
                                         <Table.HeaderCell>Hændelse</Table.HeaderCell>
+                                        <Table.HeaderCell>Samlet nedetid</Table.HeaderCell>
                                         <Table.HeaderCell>Målt status</Table.HeaderCell>
                                         <Table.HeaderCell>HTTP</Table.HeaderCell>
                                         <Table.HeaderCell>Svartid (ms)</Table.HeaderCell>
@@ -208,6 +232,7 @@ export default function IncidentsPage() {
                                                     {incidentKindLabel(row.isUp)}
                                                 </span>
                                             </Table.Cell>
+                                            <Table.Cell>{downtimeSummary(row)}</Table.Cell>
                                             <Table.Cell>
                                                 <strong
                                                     style={{ color: row.isUp ? "#7dcea0" : "#f5a9b8" }}

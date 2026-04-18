@@ -39,5 +39,10 @@ namespace UptimeDaddy.API.DTOs.DiscordEvents
 
         [JsonPropertyName("totalTimeMs")]
         public double TotalTimeMs { get; set; }
+
+        /// <summary>Ved genoprettelse: samlet nedetid i ms (sidste ned-skift → denne måling).</summary>
+        [JsonPropertyName("downtimeDurationMs")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public double? DowntimeDurationMs { get; set; }
     }
 }

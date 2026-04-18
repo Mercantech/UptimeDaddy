@@ -54,7 +54,7 @@ Return the latest measurement for a website.
 
 ## Incidents (statusskift-log)
 
-Poster oprettes når en måling ændrer tilstand fra «oppe» til «nede» eller omvendt (`MonitorStatusAlertService`), og ved **første måling** hvis sitet straks er «nede» (så nedbrud ikke mangler indtil genoprettelse). Historik før migration/deploy findes ikke i denne log.
+Poster oprettes når en måling ændrer tilstand fra «oppe» til «nede» eller omvendt (`MonitorStatusAlertService`), og ved **første måling** hvis sitet straks er «nede» (så nedbrud ikke mangler indtil genoprettelse). Ved **genoprettelse** (`isUp: true`) medfølger `downtimeDurationMs` — samlet nedetid siden sidste ned-overgang i millisekunder. Historik før migration/deploy findes ikke i denne log.
 
 ### GET /api/incidents
 
@@ -79,7 +79,8 @@ Response:
       "occurredAt": "2026-04-18T12:00:00Z",
       "isUp": true,
       "statusCode": 200,
-      "totalTimeMs": 142.5
+      "totalTimeMs": 142.5,
+      "downtimeDurationMs": 125000
     }
   ],
   "totalCount": 10,

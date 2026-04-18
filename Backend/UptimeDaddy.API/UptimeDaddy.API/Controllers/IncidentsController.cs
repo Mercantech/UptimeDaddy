@@ -77,7 +77,8 @@ namespace UptimeDaddy.API.Controllers
                     occurredAt = x.Event.OccurredAt,
                     isUp = x.Event.IsUp,
                     statusCode = x.Event.StatusCode,
-                    totalTimeMs = x.Event.TotalTimeMs
+                    totalTimeMs = x.Event.TotalTimeMs,
+                    downtimeDurationMs = x.Event.DowntimeDurationMs
                 })
                 .ToListAsync();
 

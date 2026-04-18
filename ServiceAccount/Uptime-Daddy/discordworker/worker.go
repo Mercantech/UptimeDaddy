@@ -277,7 +277,42 @@ func handleMonitorStatus(ctx context.Context, pool *pgxpool.Pool, dg *discordgo.
 		ev.TotalTimeMs,
 	)
 
+	if ev.Status == "up" && ev.DowntimeDurationMs != nil && *ev.DowntimeDurationMs > 0 {
+		body += fmt.Sprintf("**Nedetid:** %s\n", formatDowntimeDa(*ev.DowntimeDurationMs))
+	} else if ev.Status == "down" {
+		body += "**Nedetid:** samlet tid oplyses når servicen er oppe igen.\n"
+	}
+
 	return sendDiscordMessage(dg, ch.ChannelID, body)
+}
+
+// formatDowntimeDa laver læsevenlig dansk tekst fra nedetid i millisekunder.
+func formatDowntimeDa(ms float64) string {
+	if ms < 0 {
+		ms = 0
+	}
+	d := time.Duration(ms * float64(time.Millisecond))
+	sec := int64(d.Round(time.Second))
+	if sec < 60 {
+		if sec < 1 {
+			sec = 1
+		}
+		return fmt.Sprintf("%d sek.", sec)
+	}
+	min := sec / 60
+	sec = sec % 60
+	if min < 60 {
+		if sec == 0 || sec < 5 {
+			return fmt.Sprintf("%d min.", min)
+		}
+		return fmt.Sprintf("%d min. %d sek.", min, sec)
+	}
+	h := min / 60
+	min = min % 60
+	if min == 0 {
+		return fmt.Sprintf("%d t.", h)
+	}
+	return fmt.Sprintf("%d t. %d min.", h, min)
 }
 
 func handleReportRequest(ctx context.Context, pool *pgxpool.Pool, dg *discordgo.Session, ev discordReportRequestEvent) error {
