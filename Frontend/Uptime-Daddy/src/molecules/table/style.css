@@ -68,3 +68,8 @@
   margin: 0;
   font-size: 16px;
 }
+
+.monitor-table .uptime-bar-cell {
+  vertical-align: middle;
+  min-width: 200px;
+}

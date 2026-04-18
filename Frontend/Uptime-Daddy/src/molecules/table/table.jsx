@@ -7,6 +7,7 @@ import { getAuthPayload } 					from "../../util/auth";
 import accents 								from "../../util/status/stautsAccent.jsx";
 import Loader 								from "../../atoms/loader/loader.jsx";
 import { formatIntervalSeconds } 				from "../../util/durationFormat.js";
+import UptimeBar 								from "../../atoms/uptimeBar/UptimeBar.jsx";
 
 
 function TableComponent({ refreshSignal = 0, onDataChanged }) {
@@ -40,18 +41,19 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 
 	return (
 		<>
-			<Loader isLoading={loading} text="Loading websites..." />
+			<Loader isLoading={loading} text="Henter websites…" />
 			<Table celled selectable className="monitor-table">
 				<Table.Header>
 					<Table.Row>
 						<Table.HeaderCell>URL</Table.HeaderCell>
+						<Table.HeaderCell>Oversigt</Table.HeaderCell>
 						<Table.HeaderCell>Ping-interval</Table.HeaderCell>
-						<Table.HeaderCell>Status Code</Table.HeaderCell>
-						<Table.HeaderCell>DNS Lookup</Table.HeaderCell>
-						<Table.HeaderCell>Connect</Table.HeaderCell>
-						<Table.HeaderCell>TLS Handshake</Table.HeaderCell>
-						<Table.HeaderCell>Time to First Byte</Table.HeaderCell>
-						<Table.HeaderCell>Total Time</Table.HeaderCell>
+						<Table.HeaderCell>Status</Table.HeaderCell>
+						<Table.HeaderCell>DNS</Table.HeaderCell>
+						<Table.HeaderCell>Forbind.</Table.HeaderCell>
+						<Table.HeaderCell>TLS</Table.HeaderCell>
+						<Table.HeaderCell>TTFB</Table.HeaderCell>
+						<Table.HeaderCell>Total</Table.HeaderCell>
 					</Table.Row>
 				</Table.Header>
 
@@ -80,6 +82,9 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 								)}
 								<span>{m.url}</span>
 							</div>
+						</Table.Cell>
+						<Table.Cell className="uptime-bar-cell">
+							<UptimeBar measurements={m.measurements ?? []} />
 						</Table.Cell>
 						<Table.Cell>
 							<span title={`${m.intervalTime ?? 0} sekunder`}>
