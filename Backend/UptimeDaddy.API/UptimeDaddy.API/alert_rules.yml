@@ -1,0 +1,11 @@
+groups:
+  - name: uptimedaddy_probe_alerts
+    rules:
+      - alert: UptimedaddyHealthProbeDown
+        expr: probe_success{job="uptimedaddy_health_probe", instance="http://10.133.51.121:8080/health"} == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "UptimeDaddy /health probe failed"
+          description: "Probe for {{ $labels.instance }} returned failure for >1m."

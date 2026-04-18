@@ -1,0 +1,111 @@
+/* Semantic UI styles are imported in main.jsx */
+
+:root {
+  --font-main: "Iosevka Charon Mono";
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-main) !important;
+  background-color: #091413 !important;
+}
+
+*,:before,:after {
+  box-sizing: border-box;
+}
+
+*:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+.register-form.ui.form .field > label,.main-search-input-label {
+  color: #b0e4cc !important;
+}
+
+.register-form.ui.form input[type="text"],
+.register-form.ui.form input[type="email"],
+.register-form.ui.form input[type="password"],
+.main-search-input input[type="text"] {
+  background: #0f1f1c !important;
+  color: #e8fff6 !important;
+  border: 1px solid #2f6d59 !important;
+}
+
+.main-search-input i {
+  color: #8fb8a8 !important;
+}
+
+.register-form.ui.form input::placeholder,.main-search-input::placeholder {
+  color: #fff !important;
+  opacity: 1;
+}
+
+.register-form.ui.form input:focus,.main-search-input:focus {
+  border-color: #4ea584 !important;
+  box-shadow: 0 0 0 1px #4ea584 inset !important;
+}
+
+input, button, textarea, select, header, p {
+  font-family: inherit;
+}
+
+input, textarea {
+caret-color: #4ea584;
+}
+
+::selection {
+background: #408a71;
+color: #e8fff6;
+}
+
+::-moz-selection {
+background: #408a71;
+color: #e8fff6;
+}
+
+ .ui.button {
+  background-color: transparent !important;
+  color: #fff !important;
+  border: 2px solid #2f6d59 !important;
+  box-shadow: none !important;
+}
+
+.ui.button:hover {
+  background-color: #0f1f1c !important;
+  color: #fff !important;
+  border-color: #408A71 !important;
+}
+
+@keyframes search-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.global-spinner-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background-color: rgba(9, 20, 19, 0.82);
+  z-index: 1000;
+}
+
+.global-spinner-logo {
+  width: auto;
+  height: 125px;
+  animation: search-spin 1s linear infinite;
+}
+
+.global-spinner-text {
+  color: #b0e4cc;
+  font-size: 1.2rem;
+}

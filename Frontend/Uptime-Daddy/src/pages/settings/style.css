@@ -1,0 +1,58 @@
+.settings-page-container {
+  margin-top: 7rem;
+  padding: 2rem 0;
+}
+
+.settings-panel.ui.segment {
+  background-color: #0f1f1c !important;
+  border: 1px solid #2f6d59 !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.settings-title.ui.header {
+  color: #b0e4cc !important;
+  margin-bottom: 0.25rem !important;
+}
+
+.settings-subtitle {
+  color: #8fb8a8;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.settings-form.ui.form .field > label {
+  color: #b0e4cc !important;
+}
+
+.settings-form.ui.form input[type="text"],
+.settings-form.ui.form input[type="email"],
+.settings-form.ui.form input[type="number"] {
+  background: #091413 !important;
+  color: #e8fff6 !important;
+  border: 1px solid #2f6d59 !important;
+}
+
+.settings-form.ui.form input:focus {
+  border-color: #4ea584 !important;
+  box-shadow: 0 0 0 1px #4ea584 inset !important;
+}
+
+.settings-form .ui.checkbox label {
+  color: #b0e4cc !important;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.settings-form .ui.positive.message {
+  background: #102922 !important;
+  color: #b0e4cc !important;
+  border: 1px solid #2f6d59 !important;
+}

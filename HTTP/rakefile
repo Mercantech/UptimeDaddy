@@ -1,0 +1,7 @@
+task :prepare do
+  puts "Forbereder..."
+end
+
+task :run => :prepare do
+  puts "kører..."
+end

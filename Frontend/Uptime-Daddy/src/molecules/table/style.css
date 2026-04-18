@@ -1,0 +1,70 @@
+.monitor-table.ui.table {
+  background-color: #0f1f1c;
+  border: 1px solid #2f6d59;
+  color: #e8fff6;
+}
+
+.monitor-table.ui.table thead th {
+  background-color: #091413;
+  color: #408A71;
+  border-bottom: 1px solid #2f6d59;
+  font-weight: 700;
+}
+
+.monitor-table.ui.celled.table tr td,
+.monitor-table.ui.celled.table tr th {
+  border-left: 1px solid #2f6d59;
+}
+
+.monitor-table.ui.table tbody tr td {
+  border-top: 1px solid #2f6d59;
+  color: #8fb8a8;
+}
+
+.monitor-table.ui.selectable.table tbody tr:hover td {
+  background-color: #152e28 !important;
+  color: #e8fff6 !important;
+}
+
+.monitor-table .ui.label {
+  background-color: #1a3a30;
+  color: #fff !important;
+  border: 1px solid #66D0BC;
+  width: 100%;
+  text-align: center;
+}
+
+.monitor-table .ui.label.green {
+  background-color: #1e4d3a !important;
+  color: #fff !important;
+  border-color: #408A71 !important;
+}
+
+.monitor-table .url-cell-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.monitor-table .favicon-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.monitor-table .favicon-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  width: 16px;
+  color: #5c7a70;
+  flex-shrink: 0;
+}
+
+.monitor-table .favicon-placeholder i.icon {
+  margin: 0;
+  font-size: 16px;
+}
