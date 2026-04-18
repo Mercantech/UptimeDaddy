@@ -11,6 +11,7 @@ import { API_URL, fetchCall } 				from "./util/api.jsx";
 /** Hvor ofte dashboard henter friske målinger (ms). Kan sættes via VITE_DASHBOARD_POLL_MS. */
 const DASHBOARD_POLL_MS = Number(import.meta.env.VITE_DASHBOARD_POLL_MS) || 30_000;
 
+/** Synk: discord-worker `footerCredits` i `slash_commands.go` (kommandoen /daddy-skudud). */
 const FRONTEND_CREDITS = [
 	{ name: "Daniel", href: "https://github.com/Danielsteenberg-bot" },
 	{ name: "Kevin", href: "https://github.com/KevinNielsen00" },

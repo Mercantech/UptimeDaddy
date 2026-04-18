@@ -12,13 +12,25 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Slash-navne og shoutout-URL matcher frontend footer (App.jsx).
+// Slash-navne og shoutout matcher frontend footer (App.jsx: FRONTEND_CREDITS + YouTube-link).
 const (
 	slashReport   = "daddy-report"
 	slashHelp     = "daddy-help"
 	slashSkudUd   = "daddy-skudud"
 	devYouTubeURL = "https://youtu.be/Hbqz2iEZN10?t=248"
 )
+
+type footerCredit struct {
+	name string
+	url  string
+}
+
+// footerCredits skal holdes synkroniseret med Frontend/Uptime-Daddy/src/App.jsx (FRONTEND_CREDITS).
+var footerCredits = []footerCredit{
+	{"Daniel", "https://github.com/Danielsteenberg-bot"},
+	{"Kevin", "https://github.com/KevinNielsen00"},
+	{"Kim", "https://github.com/krixzy"},
+}
 
 func onReadyRegisterSlashCommands(s *discordgo.Session, r *discordgo.Ready) {
 	log.Printf("discord: klar som %s", r.User.Username)
@@ -35,7 +47,7 @@ func onReadyRegisterSlashCommands(s *discordgo.Session, r *discordgo.Ready) {
 		},
 		{
 			Name:        slashSkudUd,
-			Description: "Shout-out to the devs — same as the app footer (YouTube)",
+			Description: "Shout-out: dev GitHub links + YouTube (same as app footer)",
 		},
 	}
 
@@ -84,7 +96,7 @@ func handleSlashHelp(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	msg := "**UptimeDaddy**\n" +
 		"• `/daddy-report` — 24h summary to your integration default channel.\n" +
 		"• `/daddy-help` — this message.\n" +
-		"• `/daddy-skudud` — shout-out to the devs (YouTube), same as the web app footer.\n\n" +
+		"• `/daddy-skudud` — shout-out: dev names with GitHub links + YouTube (embeds suppressed), same as the web footer.\n\n" +
 		"Configure the integration via the UptimeDaddy API (guild and channel IDs). The bot needs **Send Messages** in the target channel."
 	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -96,14 +108,25 @@ func handleSlashHelp(s *discordgo.Session, i *discordgo.InteractionCreate) {
 }
 
 func handleSlashSkudUd(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	// Samme ordlyd som footer i Frontend/Uptime-Daddy/src/App.jsx ("Skud ud til udviklerne" + youtu.be-link).
-	msg := "[Skud ud til udviklerne](" + devYouTubeURL + ")"
+	msg := buildSkudUdMessage()
 	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: msg,
+			// Ingen link-forhåndsvisning (især YouTube-video) — hele beskeden uden embeds.
+			Flags: discordgo.MessageFlagsSuppressEmbeds,
 		},
 	})
+}
+
+func buildSkudUdMessage() string {
+	var nameLinks []string
+	for _, c := range footerCredits {
+		nameLinks = append(nameLinks, fmt.Sprintf("[%s](%s)", c.name, c.url))
+	}
+	return "**Skud ud til udviklerne**\n\n" +
+		strings.Join(nameLinks, " · ") + "\n\n" +
+		"[YouTube-klip](" + devYouTubeURL + ")"
 }
 
 func handleSlashReport(s *discordgo.Session, i *discordgo.InteractionCreate, pool *pgxpool.Pool) {

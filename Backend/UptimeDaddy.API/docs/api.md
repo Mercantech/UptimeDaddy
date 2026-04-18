@@ -116,6 +116,6 @@ Når **discord-worker** kører med Gateway, registreres globale (eller guild-spe
 
 - `/daddy-report` — 24h summary to the integration **default channel** (requires `guild_id` + channel in the API).
 - `/daddy-help` — short help.
-- `/daddy-skudud` — same shout-out + YouTube link as the web app footer (`App.jsx`).
+- `/daddy-skudud` — samme credits som footer (`App.jsx`): navne med GitHub-links + YouTube; beskeden sendes med **suppress embeds** (ingen video-forhåndsvisning).
 
 Inviter botten med scope **`applications.commands`** (se Backend README).
