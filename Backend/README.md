@@ -35,7 +35,7 @@ The root [docker-compose.yml](../docker-compose.yml) brings up PostgreSQL, MQTT 
 
 **First-time database setup**
 
-The API container does **not** run EF migrations on startup. After copying [.env.example](../.env.example) to `.env` at the repo root:
+On startup the API runs `Database.Migrate()` so `websites` / `measurements` (and pending EF migrations) are applied automatically. The Go `service-account` service should start first so the `accounts` table exists (Docker Compose enforces this). For a **manual** migration from your machine (optional), after copying [.env.example](../.env.example) to `.env` at the repo root:
 
 1. Start Postgres (or the full stack): `docker compose up -d postgres`
 2. From `Backend/UptimeDaddy.API`, apply migrations to the Postgres instance reachable on `localhost`. The compose file publishes Postgres on **`POSTGRES_PUBLISH_PORT`** (default **35432** on the host to avoid conflicting with another PostgreSQL on 5432). Adjust `Port=` if you override `POSTGRES_PUBLISH_PORT` in `.env`:

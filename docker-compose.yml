@@ -49,6 +49,8 @@ services:
         condition: service_healthy
       mqtt:
         condition: service_started
+      service-account:
+        condition: service_healthy
 
   service-account:
     build:
