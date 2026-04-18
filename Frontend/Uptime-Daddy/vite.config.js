@@ -14,7 +14,8 @@ export default defineConfig({
     allowedHosts: ['.mercantec.tech', 'localhost'],
   },
   preview: {
-    // Tillad Host-header fra Cloudflare Tunnel / produktionsdomæne (npm run preview)
-    allowedHosts: ['.mercantec.tech', 'localhost'],
+    host: true,
+    // Bag Cloudflare Tunnel / reverse proxy: tillad det Host-header edge sender (preview er kun statisk bundle)
+    allowedHosts: true,
   },
 })

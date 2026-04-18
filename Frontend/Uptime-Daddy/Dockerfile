@@ -20,6 +20,8 @@ WORKDIR /app
 COPY --from=build /app/package*.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+# preview læser vite.config.js (allowedHosts m.m.) — uden denne fil ignoreres konfigurationen
+COPY --from=build /app/vite.config.js ./vite.config.js
 
 RUN apk add --no-cache bash
 
