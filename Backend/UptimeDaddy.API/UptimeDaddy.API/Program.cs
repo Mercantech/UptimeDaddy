@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Collections.Generic;
 using UptimeDaddy.API.Data;
 using UptimeDaddy.API.HealthChecks;
 using UptimeDaddy.API.Services;
@@ -49,15 +50,23 @@ builder.Services.AddHealthChecks()
     )
     .AddCheck<MqttHealthCheck>("mqtt", tags: new[] { "mqtt" });
 
-// CORS
+// CORS — tilføj fx Cloudflare-/HTTPS-domæner via CORS_ALLOWED_ORIGINS (kommasepareret)
+var corsOrigins = new List<string> { "http://localhost:5173", "http://10.133.51.121:5173" };
+var corsExtra = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS");
+if (!string.IsNullOrWhiteSpace(corsExtra))
+{
+    foreach (var o in corsExtra.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+    {
+        if (!corsOrigins.Contains(o))
+            corsOrigins.Add(o);
+    }
+}
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:5173",
-                "http://10.133.51.121:5173"
-            )
+        policy.WithOrigins(corsOrigins.ToArray())
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
