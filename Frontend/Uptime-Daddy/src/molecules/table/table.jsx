@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } 				from "react";
+import { useState, useEffect, useCallback, useRef } 				from "react";
 import 										"./style.css";
 import { Table, Label, Icon } 				from "semantic-ui-react";
 import MonitorModal 						from "../monitorModal/index.jsx";
@@ -15,10 +15,12 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 	const [loading, setLoading] = useState(false);
   	const [websiteData, setWebsiteData] = useState([]);
 	const authPayload = getAuthPayload();
-	const userId = authPayload?.userId; 
+	const userId = authPayload?.userId;
+	const tablePollQuietRef = useRef(false);
 
 	const fetchWebsiteData = async () => {
-		setLoading(true);
+		const quiet = tablePollQuietRef.current;
+		if (!quiet) setLoading(true);
 
 		try {
 			const data = await fetchCall({
@@ -30,9 +32,14 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
 		} catch (error) {
 			console.error("Error fetching account data:", error);
 		} finally {
-			setLoading(false);
+			if (!quiet) setLoading(false);
+			tablePollQuietRef.current = true;
 		}
 	};
+
+	useEffect(() => {
+		tablePollQuietRef.current = false;
+	}, [userId]);
 
 	useEffect(() => {
 		if (!userId) return;

@@ -1,4 +1,4 @@
-import { useState,useEffect} 				from "react";
+import { useState, useEffect, useRef } 				from "react";
 import { Container } 						from "semantic-ui-react";
 import Navbar 								from "./molecules/navbar/navbar";
 import Table 								from "./molecules/table/table";
@@ -8,13 +8,16 @@ import SearchWebsite 						from "./molecules/searchWebsite";
 import { getAuthPayload } 					from "./util/auth";
 import { API_URL, fetchCall } 				from "./util/api.jsx";
 
+/** Hvor ofte dashboard henter friske målinger (ms). Kan sættes via VITE_DASHBOARD_POLL_MS. */
+const DASHBOARD_POLL_MS = Number(import.meta.env.VITE_DASHBOARD_POLL_MS) || 30_000;
+
 function App() {
 	const [showRegister, setShowRegister] = useState(false);
 	const [cards, setCards] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 	const [refreshSignal, setRefreshSignal] = useState(0);
-
+	const cardsPollQuietRef = useRef(false);
 
 	function calculateCards(amountOfWebsites, amountOfMeasurements) {
 		let totalMeasurements = 0;
@@ -49,15 +52,21 @@ function App() {
         const userId = authPayload?.userId;
 
 		const handleWebsiteDataChanged = () => {
+			cardsPollQuietRef.current = false;
 			setRefreshSignal((previous) => previous + 1);
 		};
-		
+
+		useEffect(() => {
+			cardsPollQuietRef.current = false;
+		}, [userId]);
+
 		useEffect(() => {
 			if (!userId) return;
 
 			const loadData = async () => {
+				const quiet = cardsPollQuietRef.current;
 				try {
-					setLoading(true);
+					if (!quiet) setLoading(true);
 					const [amountOfWebsites, amountOfMeasurements] = await Promise.all([
 					fetchCall({ url:`${API_URL}/Websites/user/${userId}` }),
 					fetchCall({ url:`${API_URL}/Websites/user/${userId}/with-measurements` }),
@@ -66,12 +75,24 @@ function App() {
 				} catch (err) {
 					setError(err);
 				} finally {
-					setLoading(false);
+					if (!quiet) setLoading(false);
+					cardsPollQuietRef.current = true;
 				}
 			};
 
 		loadData();
 		}, [userId, refreshSignal]);
+
+		useEffect(() => {
+			if (!userId || DASHBOARD_POLL_MS < 5000) return;
+
+			const id = window.setInterval(() => {
+				if (document.visibilityState !== "visible") return;
+				setRefreshSignal((n) => n + 1);
+			}, DASHBOARD_POLL_MS);
+
+			return () => window.clearInterval(id);
+		}, [userId]);
 
 	return (
 		<>
