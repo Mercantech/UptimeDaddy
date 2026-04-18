@@ -1,20 +1,19 @@
-# RSpec for Ruby HTTP-worker (HTTP/http_requester).
-# Kører kun når relevante stier ændres — sparer CI-minutter på resten af monorepoet.
-name: Ruby HTTP requester
+# Kører RSpec for MQTT/HTTP-workeren. Path-filtreret så resten af monorepoet ikke trigger CI.
+name: CI · Ruby HTTP worker (RSpec)
 
 on:
   push:
     paths:
       - "HTTP/http_requester/**"
-      - ".github/workflows/ruby-http-requester.yml"
+      - ".github/workflows/ci-http-requester-ruby.yml"
   pull_request:
     paths:
       - "HTTP/http_requester/**"
-      - ".github/workflows/ruby-http-requester.yml"
+      - ".github/workflows/ci-http-requester-ruby.yml"
   workflow_dispatch:
 
 jobs:
-  rspec:
+  ruby_http_requester_tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -26,12 +25,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # setup-ruby@v1: brug ruby-version (ikke ruby-version-file). 3.3 matcher Dockerfile + .ruby-version.
       - name: Ruby og Bundler (cache)
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version-file: HTTP/http_requester/.ruby-version
+          ruby-version: "3.3"
           bundler-cache: true
           working-directory: HTTP/http_requester
 
-      - name: RSpec
+      - name: Kør RSpec
         run: bundle exec rspec --format documentation

@@ -93,4 +93,4 @@ bundle install
 bundle exec rspec
 ```
 
-CI: the monorepo workflow **Ruby HTTP requester** (`.github/workflows/ruby-http-requester.yml`) runs RSpec on pushes and pull requests when files under `HTTP/http_requester/` change.
+CI: workflow **CI · Ruby HTTP worker (RSpec)** (`.github/workflows/ci-http-requester-ruby.yml`) kører ved push/PR når `HTTP/http_requester/` ændres.
