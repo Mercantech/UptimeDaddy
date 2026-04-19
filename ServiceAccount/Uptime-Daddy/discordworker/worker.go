@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"os/signal"
@@ -287,32 +288,40 @@ func handleMonitorStatus(ctx context.Context, pool *pgxpool.Pool, dg *discordgo.
 }
 
 // formatDowntimeDa laver læsevenlig dansk tekst fra nedetid i millisekunder.
+// Bruger sekund-math i stedet for time.Duration alene — undgår overflow ved meget store tal (vises som absurde «t.»).
 func formatDowntimeDa(ms float64) string {
-	if ms < 0 {
+	const maxReasonableMs = float64(366 * 24 * time.Hour / time.Millisecond)
+	if ms != ms || ms < 0 {
 		ms = 0
 	}
-	d := time.Duration(ms * float64(time.Millisecond))
-	sec := int64(d.Round(time.Second))
-	if sec < 60 {
-		if sec < 1 {
-			sec = 1
+	if ms > maxReasonableMs {
+		ms = maxReasonableMs
+	}
+
+	totalSec := ms / 1000.0
+	sec := int64(math.Round(totalSec))
+	if sec < 1 && ms > 0 {
+		sec = 1
+	}
+
+	h := sec / 3600
+	sec = sec % 3600
+	m := sec / 60
+	s := sec % 60
+
+	if h > 0 {
+		if m == 0 {
+			return fmt.Sprintf("%d t.", h)
 		}
-		return fmt.Sprintf("%d sek.", sec)
+		return fmt.Sprintf("%d t. %d min.", h, m)
 	}
-	min := sec / 60
-	sec = sec % 60
-	if min < 60 {
-		if sec == 0 || sec < 5 {
-			return fmt.Sprintf("%d min.", min)
+	if m > 0 {
+		if s == 0 || s < 5 {
+			return fmt.Sprintf("%d min.", m)
 		}
-		return fmt.Sprintf("%d min. %d sek.", min, sec)
+		return fmt.Sprintf("%d min. %d sek.", m, s)
 	}
-	h := min / 60
-	min = min % 60
-	if min == 0 {
-		return fmt.Sprintf("%d t.", h)
-	}
-	return fmt.Sprintf("%d t. %d min.", h, min)
+	return fmt.Sprintf("%d sek.", s)
 }
 
 func handleReportRequest(ctx context.Context, pool *pgxpool.Pool, dg *discordgo.Session, ev discordReportRequestEvent) error {

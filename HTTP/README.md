@@ -66,6 +66,14 @@ MAX_THREADS= empty
 
 PORT_MQTT=your_mqtt_port
 
+Optional — HTTP-check retry (mislykkede forsøg / ikke-2xx før alarm):
+
+HTTP_CHECK_MAX_ATTEMPTS=3
+
+HTTP_CHECK_RETRY_DELAY_SEC_MIN=5
+
+HTTP_CHECK_RETRY_DELAY_SEC_MAX=10
+
 
 Make sure to reference the `.env` file in your `docker-compose.yml`.
 

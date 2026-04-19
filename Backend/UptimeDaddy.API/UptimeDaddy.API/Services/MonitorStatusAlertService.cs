@@ -83,9 +83,15 @@ namespace UptimeDaddy.API.Services
             double? downtimeDurationMs = null;
             if (isUp && !prevUp)
             {
-                downtimeDurationMs = Math.Max(
-                    0,
-                    (DateTime.UtcNow - state.LastTransitionAt).TotalMilliseconds);
+                const double maxReasonableMs = 366d * 24 * 60 * 60 * 1000;
+                var span = DateTime.UtcNow - state.LastTransitionAt;
+                var rawMs = span.TotalMilliseconds;
+                if (double.IsFinite(rawMs) && rawMs >= 0 && rawMs <= maxReasonableMs)
+                    downtimeDurationMs = rawMs;
+                else if (double.IsFinite(rawMs) && rawMs > maxReasonableMs)
+                    downtimeDurationMs = maxReasonableMs;
+                else
+                    downtimeDurationMs = 0;
             }
 
             db.MonitorIncidentEvents.Add(new MonitorIncidentEvent
