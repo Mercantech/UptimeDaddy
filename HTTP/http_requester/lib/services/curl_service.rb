@@ -55,7 +55,7 @@ class CurlService
     @curl_response_with_ms_lookup ||= begin
       stdout, stderr, status = Open3.capture3("curl -s -o /dev/null #{curl_write_ms_response} #{@target_path}")
       unless status.success?
-        logger.error("Curl command failed for #{@target_path} #{stderr}")
+        @logger.error("Curl command failed for #{@target_path} #{stderr}")
         return "status:500\ndns_lookup:0\nconnect_to_page:0\ntls_hand_shake:0\ntime_to_first_byte:0\ntotal_time:0\n"
       else
         stdout
