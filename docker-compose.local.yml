@@ -1,0 +1,33 @@
+# Lokal udvikling: eksponér porte på host (uden Traefik).
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+#
+# Domæner i Traefik-labels ignoreres lokalt; brug localhost + porte nedenfor.
+# Sæt i .env:
+#   VITE_ACCOUNTS_URL=http://localhost:6969/accounts
+#   VITE_API_URL=http://localhost:8080/api
+#   CORS_ALLOWED_ORIGINS=http://localhost:5173
+
+services:
+  postgres:
+    ports:
+      - "${POSTGRES_PUBLISH_PORT:-35432}:5432"
+
+  mqtt:
+    ports:
+      - "${MQTT_PUBLISH_PORT:-11883}:1883"
+
+  uptimedaddy-api:
+    ports:
+      - "${API_PUBLISH_PORT:-8080}:8080"
+
+  service-account:
+    ports:
+      - "${SERVICE_ACCOUNT_PUBLISH_PORT:-6969}:6969"
+
+  discord-worker:
+    ports:
+      - "${DISCORD_WORKER_PUBLISH_PORT:-6970}:6970"
+
+  frontend:
+    ports:
+      - "${FRONTEND_PUBLISH_PORT:-5173}:5173"

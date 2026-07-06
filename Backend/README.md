@@ -31,14 +31,30 @@ Development notes
 
 ## Full stack: `docker-compose.yml` in the repository root
 
-The root [docker-compose.yml](../docker-compose.yml) brings up PostgreSQL, MQTT (Mosquitto), the .NET API, Go auth service (`service-account`), the Ruby HTTP worker, and the React frontend.
+The root [docker-compose.yml](../docker-compose.yml) brings up PostgreSQL, MQTT (Mosquitto), the .NET API, Go auth service (`service-account`), the Ruby HTTP worker, the Discord worker, and the React frontend.
+
+**Production (Dokploy + Traefik)**
+
+- No host ports are published. Frontend, API, and accounts are routed via Traefik on `dokploy-network` (`FRONTEND_DOMAIN`, `API_DOMAIN`, `ACCOUNTS_DOMAIN` in `.env`).
+- Postgres, MQTT, `http-requester`, and `discord-worker` only communicate on the internal Docker network.
+- Deploy: `docker compose up -d --build` (requires external network `dokploy-network` on the host).
+
+**Local development**
+
+Use [docker-compose.local.yml](../docker-compose.local.yml) to publish ports on localhost:
+
+```
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+```
+
+Set `VITE_ACCOUNTS_URL`, `VITE_API_URL`, and `CORS_ALLOWED_ORIGINS` to the `http://localhost:...` URLs (see [.env.example](../.env.example)).
 
 **First-time database setup**
 
 On startup the API runs `Database.Migrate()` so `websites` / `measurements` (and pending EF migrations) are applied automatically. The Go `service-account` service should start first so the `accounts` table exists (Docker Compose enforces this). For a **manual** migration from your machine (optional), after copying [.env.example](../.env.example) to `.env` at the repo root:
 
-1. Start Postgres (or the full stack): `docker compose up -d postgres`
-2. From `Backend/UptimeDaddy.API`, apply migrations to the Postgres instance reachable on `localhost`. The compose file publishes Postgres on **`POSTGRES_PUBLISH_PORT`** (default **35432** on the host to avoid conflicting with another PostgreSQL on 5432). Adjust `Port=` if you override `POSTGRES_PUBLISH_PORT` in `.env`:
+1. Start Postgres: `docker compose up -d postgres` (with local override if you need a host port: add `-f docker-compose.local.yml`).
+2. From `Backend/UptimeDaddy.API`, apply migrations. **With local override** (Postgres on host port **35432** by default):
 
    ```
    dotnet ef database update --project UptimeDaddy.API --startup-project UptimeDaddy.API --connection "Host=localhost;Port=35432;Database=uptimedaddy;Username=uptimedaddy;Password=YOUR_POSTGRES_PASSWORD"
@@ -46,7 +62,7 @@ On startup the API runs `Database.Migrate()` so `websites` / `measurements` (and
 
    Use the same password as `POSTGRES_PASSWORD` in `.env`.
 
-3. Bring everything up: `docker compose up --build` (from the repository root).
+3. Bring everything up: `docker compose up --build` (add `-f docker-compose.local.yml` locally).
 
 The Go service runs `AutoMigrate` for the `accounts` table when it starts. Create an admin user (matching `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`) via `POST /accounts/register` so the Ruby worker can log in and load websites from the API.
 

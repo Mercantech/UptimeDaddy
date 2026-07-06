@@ -1,17 +1,28 @@
-# Host-porte kan sættes i .env (fx på fællesservere). Interne container-porte er uændrede.
-# Eksempel: POSTGRES_PUBLISH_PORT=35432  (undgå kollision med en anden Postgres på 5432)
+# Dokploy-deploy: docker compose up -d --build
+#
+# Routing (Mercantec — samme mønster som øvrige Mercantec-apps):
+#   1. Cloudflare: *.mercantec.tech (wildcard CNAME → tunnel)
+#   2. Tunnel ingress: *.mercantec.tech → http://localhost:80
+#   3. Traefik (Dokploy): Host(`<domæne>`) → container-port
+#
+# Kun frontend, API og accounts er eksponeret via Traefik.
+# Postgres, MQTT, http-requester og discord-worker er kun på det interne netværk.
+#
+# Lokal udvikling med host-porte:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: uptimedaddy
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: uptimedaddy
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PUBLISH_PORT:-35432}:5432"
+    networks:
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U uptimedaddy -d uptimedaddy"]
       interval: 5s
@@ -20,17 +31,27 @@ services:
 
   mqtt:
     image: eclipse-mosquitto:2
-    ports:
-      - "${MQTT_PUBLISH_PORT:-11883}:1883"
+    restart: unless-stopped
     volumes:
       - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    networks:
+      - internal
 
   uptimedaddy-api:
     build:
       context: ./Backend
       dockerfile: Dockerfile
-    ports:
-      - "${API_PUBLISH_PORT:-8080}:8080"
+    restart: unless-stopped
+    networks:
+      - internal
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.uptimedaddy-api.rule=Host(`${API_DOMAIN:-api-uptimedaddy.mercantec.tech}`)
+      - traefik.http.routers.uptimedaddy-api.entrypoints=web
+      - traefik.http.routers.uptimedaddy-api.service=uptimedaddy-api
+      - traefik.http.services.uptimedaddy-api.loadbalancer.server.port=8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/alive"]
       interval: 10s
@@ -43,7 +64,7 @@ services:
       Mqtt__Port: "1883"
       Jwt__Key: ${JWT_SECRET}
       ASPNETCORE_ENVIRONMENT: Development
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://uptimedaddy.mercantec.tech}
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,8 +77,17 @@ services:
     build:
       context: ./ServiceAccount
       dockerfile: Dockerfile
-    ports:
-      - "${SERVICE_ACCOUNT_PUBLISH_PORT:-6969}:6969"
+    restart: unless-stopped
+    networks:
+      - internal
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.uptimedaddy-accounts.rule=Host(`${ACCOUNTS_DOMAIN:-acc-uptimedaddy.mercantec.tech}`)
+      - traefik.http.routers.uptimedaddy-accounts.entrypoints=web
+      - traefik.http.routers.uptimedaddy-accounts.service=uptimedaddy-accounts
+      - traefik.http.services.uptimedaddy-accounts.loadbalancer.server.port=6969
     healthcheck:
       test:
         [
@@ -80,7 +110,7 @@ services:
       POSTGRES_DB: uptimedaddy
       PORT: ":6969"
       JWT_SECRET: ${JWT_SECRET}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://uptimedaddy.mercantec.tech}
     depends_on:
       postgres:
         condition: service_healthy
@@ -90,8 +120,9 @@ services:
       context: ./ServiceAccount
       dockerfile: Dockerfile
     command: ["./discord-worker"]
-    ports:
-      - "${DISCORD_WORKER_PUBLISH_PORT:-6970}:6970"
+    restart: unless-stopped
+    networks:
+      - internal
     healthcheck:
       test:
         [
@@ -127,6 +158,9 @@ services:
     build:
       context: ./HTTP/http_requester
       dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - internal
     environment:
       MQTT_HOST: mqtt
       ACCOUNTS_HOST: service-account
@@ -149,11 +183,19 @@ services:
       context: ./Frontend/Uptime-Daddy
       dockerfile: Dockerfile
       args:
-        VITE_ACCOUNTS_URL: ${VITE_ACCOUNTS_URL:-http://localhost:6969/accounts}
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+        VITE_ACCOUNTS_URL: ${VITE_ACCOUNTS_URL:-https://acc-uptimedaddy.mercantec.tech/accounts}
+        VITE_API_URL: ${VITE_API_URL:-https://api-uptimedaddy.mercantec.tech/api}
         VITE_BUILD_ID: ${VITE_BUILD_ID:-local}
-    ports:
-      - "${FRONTEND_PUBLISH_PORT:-5173}:5173"
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.uptimedaddy-frontend.rule=Host(`${FRONTEND_DOMAIN:-uptimedaddy.mercantec.tech}`)
+      - traefik.http.routers.uptimedaddy-frontend.entrypoints=web
+      - traefik.http.routers.uptimedaddy-frontend.service=uptimedaddy-frontend
+      - traefik.http.services.uptimedaddy-frontend.loadbalancer.server.port=5173
     depends_on:
       uptimedaddy-api:
         condition: service_healthy
@@ -162,3 +204,8 @@ services:
 
 volumes:
   pgdata:
+
+networks:
+  internal:
+  dokploy-network:
+    external: true
