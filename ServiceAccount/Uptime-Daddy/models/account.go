@@ -24,6 +24,15 @@ type RefreshTokenRequest struct {
 	RefreshToken string `json:"refreshToken"`
 }
 
+// MercantecOAuthRequest sendes af frontend efter Mercantec har redirectet
+// tilbage med en authorization code. code_verifier hører til det PKCE-par,
+// SPA'en genererede før /oauth/authorize.
+type MercantecOAuthRequest struct {
+	Code         string `json:"code"`
+	CodeVerifier string `json:"codeVerifier"`
+	RedirectURI  string `json:"redirectUri"`
+}
+
 type LoginResponse struct {
 	Message          string `json:"message"`
 	AccessToken      string `json:"accessToken"`

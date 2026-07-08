@@ -3,15 +3,17 @@ package routes
 import "net/http"
 
 const (
-	AccountsRegisterPath = "/accounts/register"
-	AccountsLoginPath    = "/accounts/login"
-	AccountsRefreshPath  = "/accounts/refresh"
+	AccountsRegisterPath       = "/accounts/register"
+	AccountsLoginPath          = "/accounts/login"
+	AccountsRefreshPath        = "/accounts/refresh"
+	AccountsMercantecOAuthPath = "/accounts/oauth/mercantec"
 )
 
 type AccountHandlers struct {
-	Register http.HandlerFunc
-	Login    http.HandlerFunc
-	Refresh  http.HandlerFunc
+	Register       http.HandlerFunc
+	Login          http.HandlerFunc
+	Refresh        http.HandlerFunc
+	MercantecOAuth http.HandlerFunc
 }
 
 func RegisterAccountRoutes(mux *http.ServeMux, handlers AccountHandlers) {
@@ -25,6 +27,10 @@ func RegisterAccountRoutes(mux *http.ServeMux, handlers AccountHandlers) {
 
 	if handlers.Refresh != nil {
 		mux.HandleFunc(AccountsRefreshPath, postOnly(handlers.Refresh))
+	}
+
+	if handlers.MercantecOAuth != nil {
+		mux.HandleFunc(AccountsMercantecOAuthPath, postOnly(handlers.MercantecOAuth))
 	}
 }
 

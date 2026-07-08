@@ -38,9 +38,10 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 	routes.RegisterAccountRoutes(mux, routes.AccountHandlers{
-		Register: handler.CreateAccountHandler,
-		Login:    handler.LoginHandler,
-		Refresh:  handler.RefreshTokenHandler,
+		Register:       handler.CreateAccountHandler,
+		Login:          handler.LoginHandler,
+		Refresh:        handler.RefreshTokenHandler,
+		MercantecOAuth: handler.MercantecOAuthHandler,
 	})
 
 	handlerWithCORS := middleware.WithCORS(mux)

@@ -6,6 +6,7 @@ import registerImage                                                            
 import logo                                                                           from "../../assets/logo.png";
 import { ACCOUNTS_URL }                                                               from "../../util/api.jsx";
 import { setAuthTokens }                                                              from "../../util/auth.js";
+import { MERCANTEC_ENABLED, startMercantecLogin }                                     from "../../util/mercantec.js";
 
 function Login() {
   const navigate = useNavigate();
@@ -14,11 +15,23 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mercantecLoading, setMercantecLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
   const sendReset = () => {
     setResetMode(false);
+  };
+
+  const handleMercantecLogin = async () => {
+    setErrorMessage("");
+    setMercantecLoading(true);
+    try {
+      await startMercantecLogin();
+    } catch (error) {
+      setMercantecLoading(false);
+      setErrorMessage(error.message || "Kunne ikke starte Mercantec-login.");
+    }
   };
 
   const handleLogin = async (e) => {
@@ -146,6 +159,27 @@ function Login() {
                 backgroundColor: "#408A71",
               }}
             />
+
+            {MERCANTEC_ENABLED && (
+              <>
+                <Divider horizontal style={{ color: "#B0E4CC", marginTop: "1.5rem" }}>
+                  eller
+                </Divider>
+                <Button
+                  type="button"
+                  fluid
+                  loading={mercantecLoading}
+                  disabled={loading || mercantecLoading}
+                  onClick={handleMercantecLogin}
+                  content="Login med Mercantec"
+                  style={{
+                    color: "#091413",
+                    backgroundColor: "#B0E4CC",
+                    fontWeight: 600,
+                  }}
+                />
+              </>
+            )}
           </Form>
 
           <Modal onClose={() => setResetMode(false)} onOpen={() => setResetMode(true)} open={resetMode} size="tiny">

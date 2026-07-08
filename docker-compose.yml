@@ -111,6 +111,10 @@ services:
       PORT: ":6969"
       JWT_SECRET: ${JWT_SECRET}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://uptimedaddy.mercantec.tech}
+      MERCANTEC_CLIENT_ID: ${MERCANTEC_CLIENT_ID:-}
+      MERCANTEC_CLIENT_SECRET: ${MERCANTEC_CLIENT_SECRET:-}
+      MERCANTEC_ISSUER: ${MERCANTEC_ISSUER:-https://auth.mercantec.tech}
+      MERCANTEC_AUDIENCE: ${MERCANTEC_AUDIENCE:-mercantec-apps}
     depends_on:
       postgres:
         condition: service_healthy
@@ -186,6 +190,8 @@ services:
         VITE_ACCOUNTS_URL: ${VITE_ACCOUNTS_URL:-https://acc-uptimedaddy.mercantec.tech/accounts}
         VITE_API_URL: ${VITE_API_URL:-https://api-uptimedaddy.mercantec.tech/api}
         VITE_BUILD_ID: ${VITE_BUILD_ID:-local}
+        VITE_MERCANTEC_CLIENT_ID: ${VITE_MERCANTEC_CLIENT_ID:-}
+        VITE_MERCANTEC_ISSUER: ${VITE_MERCANTEC_ISSUER:-https://auth.mercantec.tech}
     restart: unless-stopped
     networks:
       - dokploy-network
