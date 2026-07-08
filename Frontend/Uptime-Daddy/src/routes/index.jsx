@@ -6,6 +6,8 @@ import Settings                                     from "../pages/settings";
 import PublicBoardPage                              from "../pages/publicBoard/PublicBoardPage.jsx";
 import DashboardBuilderPage                         from "../pages/dashboardBuilder/DashboardBuilderPage.jsx";
 import IncidentsPage                                from "../pages/incidents/index.jsx";
+import DevelopersPage                               from "../pages/developers/index.jsx";
+import DeveloperDetailPage                          from "../pages/developers/DeveloperDetailPage.jsx";
 import MercantecCallback                            from "../pages/auth/MercantecCallback.jsx";
 import { hasAuthToken }                             from "../util/auth";
 
@@ -68,6 +70,22 @@ export default function Router() {
           element={
             <ProtectedRoute>
               <IncidentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/developers"
+          element={
+            <ProtectedRoute>
+              <DevelopersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/developers/:slug"
+          element={
+            <ProtectedRoute>
+              <DeveloperDetailPage />
             </ProtectedRoute>
           }
         />

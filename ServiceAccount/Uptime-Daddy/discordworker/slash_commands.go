@@ -25,12 +25,15 @@ type footerCredit struct {
 	url  string
 }
 
-// footerCredits skal holdes synkroniseret med Frontend/Uptime-Daddy/src/App.jsx (FRONTEND_CREDITS).
+// footerCredits skal holdes synkroniseret med Frontend/Uptime-Daddy/src/util/credits.js (FOOTER_CREDITS).
 var footerCredits = []footerCredit{
 	{"Daniel", "https://github.com/Danielsteenberg-bot"},
 	{"Kevin", "https://github.com/KevinNielsen00"},
 	{"Kim", "https://github.com/krixzy"},
 }
+
+// footerCreditsExtra: navne uden GitHub (fx Mathias) — vises i /daddy-skudud efter linkede navne.
+var footerCreditsExtra = []string{"Mathias (migs / mags)"}
 
 func onReadyRegisterSlashCommands(s *discordgo.Session, r *discordgo.Ready) {
 	log.Printf("discord: klar som %s", r.User.Username)
@@ -127,6 +130,9 @@ func buildSkudUdMessage() string {
 	var nameLinks []string
 	for _, c := range footerCredits {
 		nameLinks = append(nameLinks, fmt.Sprintf("[%s](%s)", c.name, c.url))
+	}
+	for _, name := range footerCreditsExtra {
+		nameLinks = append(nameLinks, name)
 	}
 	// Samme som footer: anchor-teksten "Skud ud til udviklerne" peger på YouTube (ikke separat YT-label).
 	head := BrandLine("[Skud ud til udviklerne](" + devYouTubeURL + ")")
