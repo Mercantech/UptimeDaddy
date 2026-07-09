@@ -23,6 +23,103 @@ function getEmailFromPayload(payload) {
     return payload.email ?? "";
 }
 
+function EmailSettingsPanel() {
+    const authPayload = getAuthPayload();
+    const accountEmail = getEmailFromPayload(authPayload);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
+    const [enabled, setEnabled] = useState(true);
+    const [configured, setConfigured] = useState(false);
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await fetchCall({
+                url: `${API_URL}/email/notifications`,
+                method: "GET",
+            });
+            setEnabled(data?.enabled !== false);
+            setConfigured(Boolean(data?.configured));
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Kunne ikke hente e-mail-indstillinger.");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        void load();
+    }, [load]);
+
+    async function handleSave(event) {
+        event.preventDefault();
+        setSaving(true);
+        setError(null);
+        setSuccess(null);
+        try {
+            await fetchCall({
+                url: `${API_URL}/email/notifications`,
+                method: "PUT",
+                body: { enabled },
+            });
+            setSuccess("E-mail-notifikationer gemt.");
+            await load();
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Kunne ikke gemme.");
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return (
+        <Segment className="settings-panel">
+            <Header as="h2" className="settings-title">
+                E-mail-notifikationer
+            </Header>
+            <p className="settings-subtitle">
+                Modtag mail på <strong>{accountEmail}</strong> når dine monitors skifter mellem oppe og nede.
+                Kræver at SMTP er konfigureret på serveren (samme opsætning som Mercantec Auth).
+            </p>
+
+            {loading ? (
+                <Loader active inline="centered" content="Henter indstillinger…" />
+            ) : (
+                <Form className="settings-form" onSubmit={handleSave}>
+                    {error ? (
+                        <Message negative onDismiss={() => setError(null)}>
+                            {error}
+                        </Message>
+                    ) : null}
+                    {success ? (
+                        <Message positive onDismiss={() => setSuccess(null)} content={success} />
+                    ) : null}
+                    {!configured ? (
+                        <Message warning>
+                            SMTP er ikke konfigureret på serveren endnu — mails sendes ikke før{" "}
+                            <code>EMAIL_SMTP_*</code> er sat i miljøet.
+                        </Message>
+                    ) : null}
+
+                    <Form.Checkbox
+                        label="Send e-mail ved nedbrud og genoprettelse"
+                        checked={enabled}
+                        onChange={(_, d) => setEnabled(Boolean(d.checked))}
+                    />
+
+                    <div className="settings-actions">
+                        <Button type="submit" primary loading={saving} disabled={saving}>
+                            Gem e-mail-indstillinger
+                        </Button>
+                    </div>
+                </Form>
+            )}
+        </Segment>
+    );
+}
+
 function DiscordSettingsPanel() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -212,6 +309,7 @@ function Settings() {
                 </Segment>
 
                 <DiscordSettingsPanel />
+                <EmailSettingsPanel />
             </Container>
         </>
     );

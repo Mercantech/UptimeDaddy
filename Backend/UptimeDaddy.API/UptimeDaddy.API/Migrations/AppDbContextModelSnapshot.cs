@@ -157,6 +157,25 @@ namespace UptimeDaddy.API.Migrations
                     b.ToTable("discord_integrations");
                 });
 
+            modelBuilder.Entity("UptimeDaddy.API.Models.EmailNotificationPreference", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("email_notification_preferences");
+                });
+
             modelBuilder.Entity("UptimeDaddy.API.Models.DiscordMonitorSubscription", b =>
                 {
                     b.Property<long>("Id")
@@ -512,6 +531,17 @@ namespace UptimeDaddy.API.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("UptimeDaddy.API.Models.EmailNotificationPreference", b =>
+                {
+                    b.HasOne("UptimeDaddy.API.Models.User", "User")
+                        .WithOne("EmailNotificationPreference")
+                        .HasForeignKey("UptimeDaddy.API.Models.EmailNotificationPreference", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("UptimeDaddy.API.Models.DiscordMonitorSubscription", b =>
                 {
                     b.HasOne("UptimeDaddy.API.Models.MonitorPath", "MonitorPath")
@@ -615,6 +645,8 @@ namespace UptimeDaddy.API.Migrations
                     b.Navigation("DashboardBoards");
 
                     b.Navigation("DiscordIntegration");
+
+                    b.Navigation("EmailNotificationPreference");
 
                     b.Navigation("DiscordReportSchedules");
 

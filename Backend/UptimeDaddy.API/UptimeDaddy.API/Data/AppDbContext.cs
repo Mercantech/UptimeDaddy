@@ -16,6 +16,7 @@ namespace UptimeDaddy.API.Data
         public DbSet<DashboardBoard> DashboardBoards { get; set; }
         public DbSet<DashboardBoardItem> DashboardBoardItems { get; set; }
         public DbSet<DiscordIntegration> DiscordIntegrations { get; set; }
+        public DbSet<EmailNotificationPreference> EmailNotificationPreferences { get; set; }
         public DbSet<DiscordMonitorSubscription> DiscordMonitorSubscriptions { get; set; }
         public DbSet<DiscordReportSchedule> DiscordReportSchedules { get; set; }
         public DbSet<MonitorIncidentState> MonitorIncidentStates { get; set; }
@@ -112,6 +113,15 @@ namespace UptimeDaddy.API.Data
                 .HasIndex(i => i.UserId)
                 .IsUnique()
                 .HasDatabaseName("ix_discord_integrations_user_id_unique");
+
+            modelBuilder.Entity<EmailNotificationPreference>()
+                .HasOne(p => p.User)
+                .WithOne(u => u.EmailNotificationPreference)
+                .HasForeignKey<EmailNotificationPreference>(p => p.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EmailNotificationPreference>()
+                .HasKey(p => p.UserId);
 
             modelBuilder.Entity<DiscordMonitorSubscription>()
                 .HasOne(s => s.MonitorPath)

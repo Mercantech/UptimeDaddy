@@ -3,12 +3,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Collections.Generic;
 using UptimeDaddy.API.Data;
 using UptimeDaddy.API.HealthChecks;
+using UptimeDaddy.API.Options;
 using UptimeDaddy.API.Services;
 using HealthChecks.UI;
 using Prometheus;
@@ -21,6 +22,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddResponseCompression(options => options.EnableForHttps = true);
 builder.Services.AddResponseCaching();
 
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.SectionName));
+
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -28,6 +31,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Application services
 builder.Services.AddSingleton<IMqttPublishService, MqttPublishService>();
 builder.Services.AddSingleton<INotificationEventPublisher, MqttNotificationEventPublisher>();
+builder.Services.AddSingleton<IEmailService>(sp =>
+{
+    var opts = sp.GetRequiredService<IOptions<EmailOptions>>().Value;
+    if (!opts.Enabled || string.IsNullOrWhiteSpace(opts.SmtpHost))
+        return new NoOpEmailService(sp.GetRequiredService<ILogger<NoOpEmailService>>());
+    return new SmtpEmailService(
+        sp.GetRequiredService<IOptions<EmailOptions>>(),
+        sp.GetRequiredService<ILogger<SmtpEmailService>>());
+});
+builder.Services.AddScoped<MonitorStatusEmailNotifier>();
 builder.Services.AddScoped<MonitorStatusAlertService>();
 builder.Services.AddScoped<MonitorDashboardService>();
 builder.Services.AddScoped<PublicBoardShareService>();

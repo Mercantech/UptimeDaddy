@@ -23,6 +23,8 @@ namespace UptimeDaddy.API.Models
 
         public DiscordIntegration? DiscordIntegration { get; set; }
 
+        public EmailNotificationPreference? EmailNotificationPreference { get; set; }
+
         public List<DiscordReportSchedule> DiscordReportSchedules { get; set; } = new();
     }
 }

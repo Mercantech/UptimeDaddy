@@ -67,6 +67,16 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://uptimedaddy.mercantec.tech}
       Site__PublicBaseUrl: ${PUBLIC_SITE_URL:-https://uptimedaddy.mercantec.tech}
       Site__ApiPublicBaseUrl: ${VITE_API_URL:-https://api-uptimedaddy.mercantec.tech/api}
+      Email__Enabled: ${EMAIL_ENABLED:-true}
+      Email__SmtpHost: ${EMAIL_SMTP_HOST:-}
+      Email__SmtpPort: ${EMAIL_SMTP_PORT:-587}
+      Email__UseStartTls: ${EMAIL_USE_STARTTLS:-true}
+      Email__SmtpUser: ${EMAIL_SMTP_USER:-}
+      Email__SmtpPassword: ${EMAIL_SMTP_PASSWORD:-}
+      Email__FromAddress: ${EMAIL_FROM_ADDRESS:-noreply@uptimedaddy.mercantec.tech}
+      Email__FromName: ${EMAIL_FROM_NAME:-UptimeDaddy}
+      Email__ReplyToAddress: ${EMAIL_REPLY_TO_ADDRESS:-}
+      Email__NotificationCooldownSeconds: ${EMAIL_NOTIFICATION_COOLDOWN_SECONDS:-60}
     depends_on:
       postgres:
         condition: service_healthy

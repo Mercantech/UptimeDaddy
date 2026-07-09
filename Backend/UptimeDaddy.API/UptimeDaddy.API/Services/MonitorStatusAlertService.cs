@@ -9,11 +9,16 @@ namespace UptimeDaddy.API.Services
     public class MonitorStatusAlertService
     {
         private readonly INotificationEventPublisher _publisher;
+        private readonly MonitorStatusEmailNotifier _emailNotifier;
         private readonly IConfiguration _configuration;
 
-        public MonitorStatusAlertService(INotificationEventPublisher publisher, IConfiguration configuration)
+        public MonitorStatusAlertService(
+            INotificationEventPublisher publisher,
+            MonitorStatusEmailNotifier emailNotifier,
+            IConfiguration configuration)
         {
             _publisher = publisher;
+            _emailNotifier = emailNotifier;
             _configuration = configuration;
         }
 
@@ -106,42 +111,58 @@ namespace UptimeDaddy.API.Services
             state.LastStatusCode = m.StatusCode;
             state.LastTransitionAt = DateTime.UtcNow;
 
-            var cooldownSeconds = int.TryParse(_configuration["Discord:NotificationCooldownSeconds"], out var c)
-                ? c
-                : 60;
-
-            var discordCooldownBlocks =
+            var cooldownSeconds = GetNotificationCooldownSeconds();
+            var cooldownBlocks =
                 state.LastNotificationSentAt.HasValue &&
                 (DateTime.UtcNow - state.LastNotificationSentAt.Value).TotalSeconds < cooldownSeconds;
 
-            if (discordCooldownBlocks)
+            var notificationSent = false;
+
+            if (!cooldownBlocks)
             {
-                await db.SaveChangesAsync(cancellationToken);
-                return;
+                notificationSent |= await TryPublishDiscordAsync(db, path, m, prevUp, isUp, downtimeDurationMs, cancellationToken);
+                notificationSent |= await _emailNotifier.TrySendAsync(
+                    db, path, m, prevUp, isUp, downtimeDurationMs, cancellationToken);
             }
 
+            if (notificationSent)
+                state.LastNotificationSentAt = DateTime.UtcNow;
+
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        private int GetNotificationCooldownSeconds()
+        {
+            if (int.TryParse(_configuration["Email:NotificationCooldownSeconds"], out var emailCooldown))
+                return emailCooldown;
+
+            return int.TryParse(_configuration["Discord:NotificationCooldownSeconds"], out var discordCooldown)
+                ? discordCooldown
+                : 60;
+        }
+
+        private async Task<bool> TryPublishDiscordAsync(
+            AppDbContext db,
+            MonitorPath path,
+            Measurement m,
+            bool prevUp,
+            bool isUp,
+            double? downtimeDurationMs,
+            CancellationToken cancellationToken)
+        {
             var integration = await db.DiscordIntegrations
                 .AsNoTracking()
                 .FirstOrDefaultAsync(i => i.UserId == path.Monitor.UserId, cancellationToken);
 
             if (integration == null || !integration.Enabled)
-            {
-                await db.SaveChangesAsync(cancellationToken);
-                return;
-            }
+                return false;
 
             var sub = await db.DiscordMonitorSubscriptions
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.MonitorPathId == path.Id, cancellationToken);
 
             if (sub == null || !sub.NotificationEnabled)
-            {
-                await db.SaveChangesAsync(cancellationToken);
-                return;
-            }
-
-            state.LastNotificationSentAt = DateTime.UtcNow;
-            await db.SaveChangesAsync(cancellationToken);
+                return false;
 
             var displayUrl = MonitorUrlParser.DisplayUrl(path.Monitor.BaseUrl, path.Path);
 
@@ -161,6 +182,7 @@ namespace UptimeDaddy.API.Services
             };
 
             await _publisher.PublishMonitorStatusAsync(dto, cancellationToken);
+            return true;
         }
     }
 }
