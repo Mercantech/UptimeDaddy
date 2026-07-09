@@ -1,13 +1,10 @@
 using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using UptimeDaddy.API.Data;
 
 #nullable disable
 
 namespace UptimeDaddy.API.Migrations
 {
-    [DbContext(typeof(UptimeDaddy.API.Data.AppDbContext))]
-    [Migration("20260708220000_AddMonitorsAndMonitorPaths")]
+    /// <inheritdoc />
     public partial class AddMonitorsAndMonitorPaths : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
