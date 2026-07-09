@@ -8,7 +8,8 @@ export default defineConfig({
     transformer: 'postcss',
   },
   build: {
-    cssMinify: true,
+    // lightningcss fejler på semantic-ui-css; esbuild håndterer det.
+    cssMinify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks(id) {
