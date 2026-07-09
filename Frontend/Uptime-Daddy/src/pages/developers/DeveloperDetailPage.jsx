@@ -47,6 +47,17 @@ export default function DeveloperDetailPage() {
 					) : null}
 				</Segment>
 
+				{developer.reportContribution?.length ? (
+					<Segment className="developers-panel developers-report-panel">
+						<div className="developer-shoutout__label">Fra projektrapporten</div>
+						<ul className="developers-report-list">
+							{developer.reportContribution.map((note) => (
+								<li key={note}>{note}</li>
+							))}
+						</ul>
+					</Segment>
+				) : null}
+
 				<div className="developer-card__roles" style={{ marginBottom: "1.25rem" }}>
 					{developer.roles.map((role) => (
 						<span key={role} className="developer-card__role">
@@ -65,6 +76,9 @@ export default function DeveloperDetailPage() {
 						</Header>
 						<span className="developers-panel__stack">{part.stack}</span>
 						<p className="developers-panel__text">{part.description}</p>
+						{part.reportNote ? (
+							<p className="developers-panel__report-note">{part.reportNote}</p>
+						) : null}
 					</Segment>
 				))}
 			</Container>

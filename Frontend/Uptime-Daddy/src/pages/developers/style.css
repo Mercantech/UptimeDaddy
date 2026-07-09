@@ -9,10 +9,71 @@
 
 .developers-page-container .developers-lead {
   color: #8fb8a8;
-  margin-bottom: 2rem;
+  margin-bottom: 0.65rem;
   max-width: 50rem;
   line-height: 1.6;
   font-size: 1.05rem;
+}
+
+.developers-report-meta {
+  color: #5c7a70;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  margin: 0 0 1.5rem;
+}
+
+.developers-report-panel {
+  margin-top: 1.5rem !important;
+}
+
+.developers-report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.developers-report-card {
+  padding: 0.85rem 1rem;
+  background: #091413;
+  border: 1px solid #2f6d59;
+  border-radius: 8px;
+}
+
+.developers-report-card__title {
+  margin: 0 0 0.4rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #b0e4cc;
+}
+
+.developers-report-card__text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #7a9e94;
+}
+
+.developers-panel__report-note {
+  margin: 0.85rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #2f6d59;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: #6d9084;
+  font-style: italic;
+}
+
+.developers-report-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.15rem;
+  color: #8fb8a8;
+  line-height: 1.6;
+  font-size: 0.92rem;
+}
+
+.developers-report-list li + li {
+  margin-top: 0.45rem;
 }
 
 .developers-panel.ui.segment {

@@ -14,3 +14,21 @@
   padding-left: 0.4rem !important;
   padding-right: 0.4rem !important;
 }
+
+.app-navbar .navbar-dev-icon.ui.button {
+  color: #6d9084 !important;
+  border-color: transparent !important;
+  padding: 0.5rem !important;
+  min-width: 2.25rem;
+}
+
+.app-navbar .navbar-dev-icon.ui.button:hover {
+  color: #b0e4cc !important;
+  background-color: #0f1f1c !important;
+  border-color: #2f6d59 !important;
+}
+
+.app-navbar .navbar-dev-icon.ui.button .icon {
+  margin: 0 !important;
+  opacity: 0.85;
+}

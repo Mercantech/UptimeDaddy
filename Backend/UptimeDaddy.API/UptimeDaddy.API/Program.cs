@@ -30,6 +30,7 @@ builder.Services.AddSingleton<IMqttPublishService, MqttPublishService>();
 builder.Services.AddSingleton<INotificationEventPublisher, MqttNotificationEventPublisher>();
 builder.Services.AddScoped<MonitorStatusAlertService>();
 builder.Services.AddScoped<MonitorDashboardService>();
+builder.Services.AddScoped<PublicBoardShareService>();
 builder.Services.AddScoped<SslExpiryAlertService>();
 builder.Services.AddSingleton<PingPreviewService>();
 builder.Services.AddHostedService<MqttService>();

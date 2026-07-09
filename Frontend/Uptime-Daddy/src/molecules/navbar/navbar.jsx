@@ -1,5 +1,5 @@
 import "./style.css";
-import { Menu, Container, Button, Image }   from "semantic-ui-react";
+import { Menu, Container, Button, Image, Icon } from "semantic-ui-react";
 import { useNavigate }                      from "react-router-dom";
 import logo                                 from "../../assets/logo.png";
 import { AUTH_TOKEN_KEY }                   from "../../util/auth";
@@ -33,7 +33,16 @@ function Navbar() {
                         <Button compact onClick={() => navigate("/settings")}>Settings</Button>
                     </Menu.Item>
                     <Menu.Item>
-                        <Button compact onClick={() => navigate("/developers")}>Holdet</Button>
+                        <Button
+                            compact
+                            icon
+                            aria-label="Skud ud til udviklerne"
+                            title="Skud ud til udviklerne"
+                            className="navbar-dev-icon"
+                            onClick={() => navigate("/developers")}
+                        >
+                            <Icon name="code" />
+                        </Button>
                     </Menu.Item>
                     <Menu.Item>
                         <Button compact negative onClick={handleLogout}>Logout</Button>

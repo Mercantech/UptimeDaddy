@@ -13,11 +13,19 @@ namespace UptimeDaddy.API.Controllers
     {
         private readonly AppDbContext _context;
         private readonly MonitorDashboardService _dashboardService;
+        private readonly PublicBoardShareService _shareService;
+        private readonly IConfiguration _configuration;
 
-        public PublicDashboardsController(AppDbContext context, MonitorDashboardService dashboardService)
+        public PublicDashboardsController(
+            AppDbContext context,
+            MonitorDashboardService dashboardService,
+            PublicBoardShareService shareService,
+            IConfiguration configuration)
         {
             _context = context;
             _dashboardService = dashboardService;
+            _shareService = shareService;
+            _configuration = configuration;
         }
 
         private static string NormalizeBoardName(string? raw)
@@ -104,6 +112,58 @@ namespace UptimeDaddy.API.Controllers
                 items,
                 incidents = recentIncidents
             });
+        }
+
+        [HttpGet("{publicId}/social")]
+        [AllowAnonymous]
+        [Produces("text/html")]
+        public async Task<IActionResult> GetSocialPreview(string publicId)
+        {
+            var preview = await _shareService.GetSharePreviewAsync(publicId);
+            if (preview == null)
+                return NotFound();
+
+            var pageUrl = BuildBoardPageUrl(preview.PublicId);
+            var imageUrl = BuildOgImageUrl(publicId);
+            var html = PublicBoardShareService.BuildSocialHtml(preview, pageUrl, imageUrl);
+            return Content(html, "text/html; charset=utf-8");
+        }
+
+        [HttpGet("{publicId}/og-image.svg")]
+        [AllowAnonymous]
+        [Produces("image/svg+xml")]
+        [ResponseCache(Duration = 120, Location = ResponseCacheLocation.Any)]
+        public async Task<IActionResult> GetOgImage(string publicId)
+        {
+            var preview = await _shareService.GetSharePreviewAsync(publicId);
+            if (preview == null)
+                return NotFound();
+
+            var svg = PublicBoardShareService.BuildOgImageSvg(preview);
+            return Content(svg, "image/svg+xml; charset=utf-8");
+        }
+
+        private string BuildBoardPageUrl(string publicId)
+        {
+            var baseUrl = _configuration["Site:PublicBaseUrl"]?.TrimEnd('/');
+            if (string.IsNullOrWhiteSpace(baseUrl))
+                baseUrl = $"{Request.Scheme}://{Request.Host}";
+
+            return $"{baseUrl}/b/{Uri.EscapeDataString(publicId)}";
+        }
+
+        private string BuildOgImageUrl(string publicId)
+        {
+            var apiBase = _configuration["Site:ApiPublicBaseUrl"]?.TrimEnd('/');
+            if (string.IsNullOrWhiteSpace(apiBase))
+            {
+                var requestBase = $"{Request.Scheme}://{Request.Host}";
+                apiBase = requestBase.EndsWith("/api", StringComparison.OrdinalIgnoreCase)
+                    ? requestBase
+                    : $"{requestBase}/api";
+            }
+
+            return $"{apiBase}/public/boards/{Uri.EscapeDataString(publicId)}/og-image.svg";
         }
 
         private static object MergeBoardRow(DashboardBoardItem row, object monitor)
