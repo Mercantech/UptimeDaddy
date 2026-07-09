@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Header, Icon, Input, Modal, Popup } from "semantic-ui-react";
+import { Button, Icon, Input, Modal, Popup } from "semantic-ui-react";
 import Cards from "../../atoms/cards/cards";
 import Loader from "../../atoms/loader/loader";
 import statusIcon from "../../util/status/statusIcon.jsx";
@@ -14,12 +14,7 @@ function FieldLabel({ children, hint }) {
       content={hint}
       position="top center"
       hoverable
-      trigger={
-        <span className="search-website-field__label">
-          {children}
-          <Icon name="info circle" />
-        </span>
-      }
+      trigger={<span className="search-website-field__label">{children}</span>}
     />
   );
 }
@@ -109,12 +104,7 @@ function SearchWebsite({ onWebsiteAdded }) {
           content="Opret én monitor per domæne. Tilføj flere stier for at overvåge f.eks. forsiden og et health-endpoint. Domæne-status vises som worst-of på tværs af alle stier."
           position="right center"
           hoverable
-          trigger={
-            <Header as="h2" className="search-website-panel__title" style={{ cursor: "help", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
-              Tilføj domæne-monitor
-              <Icon name="info circle" style={{ fontSize: "0.55em", color: "#6d9084", margin: 0 }} />
-            </Header>
-          }
+          trigger={<h2 className="search-website-panel__title">Tilføj domæne-monitor</h2>}
         />
 
         <p className="search-website-panel__intro">

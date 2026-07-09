@@ -7,10 +7,19 @@
 }
 
 .search-website-panel__title {
-  color: #b0e4cc;
+  color: #b0e4cc !important;
   margin: 0 0 0.35rem;
   font-size: 2rem;
   font-weight: 700;
+  cursor: help;
+  display: inline-block;
+  border-bottom: 1px dashed transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.search-website-panel__title:hover {
+  color: #d4f5e8 !important;
+  border-bottom-color: #408a71;
 }
 
 .search-website-panel__intro {
@@ -40,16 +49,6 @@
 .search-website-field__label:hover {
   color: #d4f5e8;
   border-bottom-color: #408a71;
-}
-
-.search-website-field__label .icon {
-  color: #6d9084 !important;
-  margin: 0 !important;
-  font-size: 0.85em !important;
-}
-
-.search-website-field__label:hover .icon {
-  color: #9bcbb8 !important;
 }
 
 .search-website-panel .ui.input.search-website-input {

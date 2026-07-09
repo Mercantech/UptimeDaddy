@@ -9,11 +9,28 @@ import {
   Icon,
   Input,
   Message,
+  Modal,
   Segment,
 } from "semantic-ui-react";
 import Navbar from "../../molecules/navbar/navbar.jsx";
 import { getAuthPayload } from "../../util/auth";
 import { API_URL, fetchCall } from "../../util/api.jsx";
+import "./dashboardBuilder.css";
+
+function buildEmbedCode(url, boardLabel) {
+  const title = boardLabel
+    ? `UptimeDaddy — ${boardLabel} status`
+    : "UptimeDaddy status";
+  return `<iframe
+  src="${url}"
+  title="${title}"
+  width="100%"
+  height="420"
+  loading="lazy"
+  style="border:1px solid #2f6d59;border-radius:10px;background:#091413;min-height:320px;"
+  allowfullscreen
+></iframe>`;
+}
 
 function DashboardBuilderPage() {
   const authPayload = getAuthPayload();
@@ -28,6 +45,7 @@ function DashboardBuilderPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [copyMsg, setCopyMsg] = useState(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const monitorById = useMemo(() => {
     const m = new Map();
@@ -207,15 +225,52 @@ function DashboardBuilderPage() {
     await loadBoards();
   };
 
+  const publicUrl = boardName.trim()
+    ? `${window.location.origin}/b/${encodeURIComponent(boardName.trim().toUpperCase())}`
+    : "";
+
+  const embedCode = publicUrl ? buildEmbedCode(publicUrl, boardName.trim().toUpperCase()) : "";
+
   const copyShareLink = async () => {
-    const segment = boardName.trim();
-    if (!segment) return;
-    const url = `${window.location.origin}/b/${encodeURIComponent(segment.toUpperCase())}`;
+    if (!publicUrl) return;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(publicUrl);
       setCopyMsg({ info: true, text: "Link kopieret til udklipsholder." });
     } catch {
-      setCopyMsg({ warning: true, text: url });
+      setCopyMsg({ warning: true, text: publicUrl });
+    }
+  };
+
+  const copyEmbedCode = async () => {
+    if (!embedCode) return;
+    try {
+      await navigator.clipboard.writeText(embedCode);
+      setCopyMsg({ info: true, text: "Embed-kode kopieret — indsæt den på din hjemmeside eller i Notion." });
+    } catch {
+      setCopyMsg({ warning: true, text: "Kunne ikke kopiere. Markér koden manuelt." });
+    }
+  };
+
+  const openPublicPage = () => {
+    if (!publicUrl) return;
+    window.open(publicUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handleShare = () => {
+    if (!publicUrl) return;
+    setShareModalOpen(true);
+  };
+
+  const nativeShare = async () => {
+    if (!publicUrl || typeof navigator.share !== "function") return;
+    try {
+      await navigator.share({
+        title: boardName.trim() ? `Status: ${boardName.trim().toUpperCase()}` : "UptimeDaddy status",
+        text: "Se live uptime-status for vores services.",
+        url: publicUrl,
+      });
+    } catch (e) {
+      if (e?.name !== "AbortError") console.error(e);
     }
   };
 
@@ -229,10 +284,6 @@ function DashboardBuilderPage() {
       </>
     );
   }
-
-  const publicUrl = boardName.trim()
-    ? `${window.location.origin}/b/${encodeURIComponent(boardName.trim().toUpperCase())}`
-    : "";
 
   return (
     <>
@@ -348,19 +399,26 @@ function DashboardBuilderPage() {
                     {isPublished && publicUrl ? (
                       <Form.Field>
                         <label style={{ color: "#B0E4CC" }}>Offentligt link</label>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
-                          <code
-                            style={{
-                              color: "#B0E4CC",
-                              fontSize: "0.85rem",
-                              wordBreak: "break-all",
-                              flex: "1 1 240px",
-                            }}
+                        <code className="dashboard-builder-share-link">{publicUrl}</code>
+                        <div className="dashboard-builder-share-actions">
+                          <Button
+                            type="button"
+                            size="small"
+                            className="dashboard-builder-btn-open"
+                            onClick={openPublicPage}
                           >
-                            {publicUrl}
-                          </code>
+                            <Icon name="external alternate" /> Åbn side
+                          </Button>
                           <Button type="button" size="small" onClick={copyShareLink}>
-                            <Icon name="copy" /> Kopiér
+                            <Icon name="copy" /> Kopiér link
+                          </Button>
+                          <Button
+                            type="button"
+                            size="small"
+                            className="dashboard-builder-btn-share"
+                            onClick={handleShare}
+                          >
+                            <Icon name="share square" /> Del &amp; embed
                           </Button>
                         </div>
                       </Form.Field>
@@ -493,6 +551,56 @@ function DashboardBuilderPage() {
                 content={copyMsg.text}
               />
             ) : null}
+
+            <Modal
+              open={shareModalOpen}
+              onClose={() => setShareModalOpen(false)}
+              size="small"
+              className="dashboard-builder-share-modal"
+            >
+              <Modal.Header>
+                <Icon name="share square" /> Del status page
+              </Modal.Header>
+              <Modal.Content>
+                <p className="dashboard-builder-embed-hint">
+                  Indlej status-siden på din hjemmeside, wiki eller intranet. Forhåndsvisningen opdateres live.
+                </p>
+                <div className="dashboard-builder-embed-preview">
+                  <div className="dashboard-builder-embed-preview__chrome">
+                    <span className="dashboard-builder-embed-preview__dot" />
+                    <span className="dashboard-builder-embed-preview__dot" />
+                    <span className="dashboard-builder-embed-preview__dot dashboard-builder-embed-preview__dot--live" />
+                    <span className="dashboard-builder-embed-preview__url">{publicUrl}</span>
+                  </div>
+                  <iframe
+                    className="dashboard-builder-embed-preview__frame"
+                    src={publicUrl}
+                    title={`Forhåndsvisning: ${boardName.trim().toUpperCase()}`}
+                    loading="lazy"
+                  />
+                </div>
+                <label style={{ color: "#B0E4CC", fontSize: "0.9rem", fontWeight: 600 }}>Embed-kode</label>
+                <pre className="dashboard-builder-embed-code">{embedCode}</pre>
+              </Modal.Content>
+              <Modal.Actions>
+                <Button onClick={() => setShareModalOpen(false)}>Luk</Button>
+                {typeof navigator.share === "function" ? (
+                  <Button onClick={nativeShare}>
+                    <Icon name="share" /> Del link
+                  </Button>
+                ) : null}
+                <Button onClick={openPublicPage}>
+                  <Icon name="external alternate" /> Åbn side
+                </Button>
+                <Button
+                  primary
+                  style={{ backgroundColor: "#1F8B68" }}
+                  onClick={copyEmbedCode}
+                >
+                  <Icon name="code" /> Kopiér embed
+                </Button>
+              </Modal.Actions>
+            </Modal>
           </>
         )}
       </Container>
