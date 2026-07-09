@@ -1,5 +1,6 @@
 /** Synk: discord-worker `footerCredits` i `slash_commands.go` (kommandoen /daddy-skudud). */
 
+/** Easter egg: linket sidder diskret i overskriften "Skud ud til udviklerne" (også i Discord /daddy-skudud). */
 export const DEV_YOUTUBE_URL = "https://youtu.be/Hbqz2iEZN10?t=248";
 
 /** Overordnede dele af UptimeDaddy — bruges på /developers. */

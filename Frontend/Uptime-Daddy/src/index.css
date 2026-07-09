@@ -142,3 +142,14 @@ color: #e8fff6;
   color: #b0e4cc;
   transform: scale(1.08);
 }
+
+/* Easter egg: YouTube-link gemt i "Skud ud til udviklerne" — ser ud som almindelig tekst */
+.credits-easter-egg-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: inherit;
+}
+
+.credits-easter-egg-link:hover {
+  color: #c5ebe0;
+}

@@ -105,20 +105,6 @@
   border-color: #b0e4cc !important;
 }
 
-.credits-banner__yt-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: #8fb8a8;
-  font-size: 0.88rem;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.credits-banner__yt-link:hover {
-  color: #b0e4cc;
-}
-
 .credits-banner--compact {
   margin-top: 0;
 }

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Container, Header, Segment } from "semantic-ui-react";
 import Navbar from "../../molecules/navbar/navbar";
 import CreditsBanner from "../../components/CreditsBanner";
-import { DEVELOPERS, PLATFORM_PARTS } from "../../util/credits";
+import { DEV_YOUTUBE_URL, DEVELOPERS, PLATFORM_PARTS } from "../../util/credits";
 import "./style.css";
 
 export default function DevelopersPage() {
@@ -11,7 +11,14 @@ export default function DevelopersPage() {
 			<Navbar />
 			<Container className="developers-page-container">
 				<Header as="h1" className="developers-title">
-					Skud ud til udviklerne
+					<a
+						href={DEV_YOUTUBE_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="credits-easter-egg-link"
+					>
+						Skud ud til udviklerne
+					</a>
 				</Header>
 				<p className="developers-lead">
 					UptimeDaddy er en uptime-monitoreringsplatform fra H5 Mercantec. Fire dele arbejder sammen —

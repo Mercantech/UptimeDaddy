@@ -13,7 +13,16 @@ export default function CreditsBanner({ compact = false }) {
 				<div className="credits-banner__head">
 					<Icon name="heart" className="credits-banner__icon" />
 					<div>
-						<h2 className="credits-banner__title">Skud ud til udviklerne</h2>
+						<h2 className="credits-banner__title">
+							<a
+								href={DEV_YOUTUBE_URL}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="credits-easter-egg-link"
+							>
+								Skud ud til udviklerne
+							</a>
+						</h2>
 						<p className="credits-banner__lead">
 							UptimeDaddy er bygget på H5 — se hvem der står bag hver del af platformen.
 						</p>
@@ -46,15 +55,6 @@ export default function CreditsBanner({ compact = false }) {
 					<Button as={Link} to="/developers" primary className="credits-banner__cta">
 						Mød holdet
 					</Button>
-					<a
-						href={DEV_YOUTUBE_URL}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="credits-banner__yt-link"
-					>
-						<Icon name="youtube" />
-						Se shoutout-video
-					</a>
 				</div>
 			</div>
 		</section>
