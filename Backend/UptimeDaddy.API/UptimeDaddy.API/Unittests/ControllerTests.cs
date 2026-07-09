@@ -26,7 +26,10 @@ namespace UptimeDaddy.API.Unittests
                     It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<bool>()))
                 .Returns(Task.CompletedTask);
 
-            var controller = new MonitorsController(context, mqttMock.Object);
+            var controller = new MonitorsController(
+                context,
+                mqttMock.Object,
+                new MonitorDashboardService(context));
 
             var result = await controller.Create(null!);
 
@@ -48,7 +51,10 @@ namespace UptimeDaddy.API.Unittests
                     It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<bool>()))
                 .Returns(Task.CompletedTask);
 
-            var controller = new MonitorsController(context, mqttMock.Object);
+            var controller = new MonitorsController(
+                context,
+                mqttMock.Object,
+                new MonitorDashboardService(context));
 
             var dto = new UpdateMonitorIntervalDto { IntervalTime = 30 };
 
