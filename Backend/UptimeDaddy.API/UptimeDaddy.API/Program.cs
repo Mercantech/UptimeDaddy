@@ -1,6 +1,7 @@
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
@@ -17,6 +18,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddResponseCompression(options => options.EnableForHttps = true);
+builder.Services.AddResponseCaching();
 
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -26,6 +29,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddSingleton<IMqttPublishService, MqttPublishService>();
 builder.Services.AddSingleton<INotificationEventPublisher, MqttNotificationEventPublisher>();
 builder.Services.AddScoped<MonitorStatusAlertService>();
+builder.Services.AddScoped<MonitorDashboardService>();
 builder.Services.AddScoped<SslExpiryAlertService>();
 builder.Services.AddSingleton<PingPreviewService>();
 builder.Services.AddHostedService<MqttService>();
@@ -105,11 +109,7 @@ builder.Services
                 Console.WriteLine($"JWT auth failed: {context.Exception}");
                 return Task.CompletedTask;
             },
-            OnTokenValidated = context =>
-            {
-                Console.WriteLine("JWT token validated successfully.");
-                return Task.CompletedTask;
-            },
+            OnTokenValidated = _ => Task.CompletedTask,
             OnChallenge = context =>
             {
                 Console.WriteLine($"JWT challenge: {context.Error} | {context.ErrorDescription}");
@@ -132,6 +132,9 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseRouting();
+
+app.UseResponseCompression();
+app.UseResponseCaching();
 
 app.UseCors("AllowFrontend");
 

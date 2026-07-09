@@ -1,17 +1,31 @@
-import { useState, useEffect, useCallback, useRef, Fragment } from "react";
+import { useState, useCallback, Fragment, lazy, Suspense, useEffect } from "react";
 import "./style.css";
 import { Table, Label, Icon } from "semantic-ui-react";
-import MonitorModal from "../monitorModal/index.jsx";
-import { API_URL, fetchCall } from "../../util/api.jsx";
-import { getAuthPayload } from "../../util/auth";
 import accents from "../../util/status/stautsAccent.jsx";
 import Loader from "../../atoms/loader/loader.jsx";
 import { formatIntervalSeconds } from "../../util/durationFormat.js";
 import UptimeBar from "../../atoms/uptimeBar/UptimeBar.jsx";
 import TimingCell from "../../atoms/timingCell/TimingCell.jsx";
+import { monitorFaviconUrl, pathLatest } from "../../util/monitor.js";
 
-function pathLatest(path) {
-  return path.measurements?.[0] ?? null;
+const MonitorModal = lazy(() => import("../monitorModal/index.jsx"));
+
+function FaviconImage({ src, className }) {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  if (!src || failed) {
+    return (
+      <span className="favicon-placeholder">
+        <Icon name="file image outline" />
+      </span>
+    );
+  }
+
+  return <img src={src} alt="" className={className} onError={() => setFailed(true)} />;
 }
 
 function MonitorDataRow({
@@ -30,16 +44,12 @@ function MonitorDataRow({
       <Table.Cell>
         <div className={`url-cell-content ${indent ? "url-cell-content--indent" : ""}`}>
           {faviconSrc && !indent ? (
-            <img src={faviconSrc} alt="" className="favicon-icon" />
+            <FaviconImage src={faviconSrc} className="favicon-icon" />
           ) : indent ? (
             <span className="favicon-placeholder favicon-placeholder--small">
               <Icon name="level down" rotated="clockwise" />
             </span>
-          ) : (
-            <span className="favicon-placeholder">
-              <Icon name="file image outline" />
-            </span>
-          )}
+          ) : null}
           {labelNode}
         </div>
       </Table.Cell>
@@ -68,42 +78,12 @@ function MonitorDataRow({
   );
 }
 
-function TableComponent({ refreshSignal = 0, onDataChanged }) {
+function TableComponent({ monitorData = [], loading = false, onDataChanged, onMonitorPatched }) {
   const [selected, setSelected] = useState(null);
   const [expanded, setExpanded] = useState(() => new Set());
-  const [loading, setLoading] = useState(false);
-  const [monitorData, setMonitorData] = useState([]);
-  const authPayload = getAuthPayload();
-  const userId = authPayload?.userId;
-  const tablePollQuietRef = useRef(false);
-
-  const fetchMonitorData = async () => {
-    const quiet = tablePollQuietRef.current;
-    if (!quiet) setLoading(true);
-    try {
-      const data = await fetchCall({
-        url: `${API_URL}/Monitors/user/${userId}/with-measurements`,
-      });
-      setMonitorData(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error fetching monitor data:", error);
-    } finally {
-      if (!quiet) setLoading(false);
-      tablePollQuietRef.current = true;
-    }
-  };
-
-  useEffect(() => {
-    tablePollQuietRef.current = false;
-  }, [userId]);
-
-  useEffect(() => {
-    if (!userId) return;
-    fetchMonitorData();
-  }, [userId, refreshSignal]);
 
   const patchMonitor = useCallback((updated) => {
-    setMonitorData((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+    onMonitorPatched?.(updated);
     setSelected((prev) => {
       if (prev?.mode === "monitor" && prev?.id === updated.id) return { ...prev, ...updated, mode: "monitor" };
       if (prev?.mode === "path" && prev?.monitor?.id === updated.id) {
@@ -112,7 +92,7 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
       }
       return prev;
     });
-  }, []);
+  }, [onMonitorPatched]);
 
   const toggleExpand = (monitorId, e) => {
     e.stopPropagation();
@@ -150,7 +130,7 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
               (a, b) => (pathLatest(b)?.totalTimeMs ?? 0) - (pathLatest(a)?.totalTimeMs ?? 0),
             )[0];
             const rollupLatest = pathLatest(slowest) ?? { statusCode: rollup.latestStatusCode, totalTimeMs: rollup.latestTotalTimeMs };
-            const faviconSrc = m.faviconBase64 ? `data:image/x-icon;base64,${m.faviconBase64}` : null;
+            const faviconSrc = monitorFaviconUrl(m.id);
             const isOpen = expanded.has(m.id);
             const hasMultiplePaths = paths.length > 1;
 
@@ -198,9 +178,12 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
                       indent
                       labelNode={<span>{p.displayLabel || p.path}</span>}
                       latest={pathLatest(p)}
-                      checkCount={p.measurements?.length ?? 0}
+                      checkCount={p.measurementCount ?? p.measurements?.length ?? 0}
                       intervalTime={m.intervalTime}
-                      uptimeProps={{ measurements: p.measurements }}
+                      uptimeProps={{
+                        rollupSegments: p.segments,
+                        rollupPercent: p.uptimePercent,
+                      }}
                       onClick={() => setSelected({ ...p, mode: "path", monitor: m })}
                     />
                   ))}
@@ -210,12 +193,14 @@ function TableComponent({ refreshSignal = 0, onDataChanged }) {
         </Table.Body>
       </Table>
 
-      <MonitorModal
-        monitor={selected}
-        onClose={() => setSelected(null)}
-        onDataChanged={onDataChanged}
-        onMonitorPatched={patchMonitor}
-      />
+      <Suspense fallback={null}>
+        <MonitorModal
+          monitor={selected}
+          onClose={() => setSelected(null)}
+          onDataChanged={onDataChanged}
+          onMonitorPatched={patchMonitor}
+        />
+      </Suspense>
     </>
   );
 }

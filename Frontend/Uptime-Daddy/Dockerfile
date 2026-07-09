@@ -9,9 +9,7 @@ COPY . .
 
 ARG VITE_ACCOUNTS_URL=http://localhost:6969/accounts
 ARG VITE_API_URL=http://localhost:8080/api
-# Sæt unikt pr. deploy i Dokploy/CI (fx git SHA eller $DATE) så Vite altid laver ny bundle — ellers kan Docker genbruge et lag og I ser gammel UI.
 ARG VITE_BUILD_ID=
-# Mercantec "Login med Mercantec" — tom client_id skjuler knappen.
 ARG VITE_MERCANTEC_CLIENT_ID=
 ARG VITE_MERCANTEC_ISSUER=https://auth.mercantec.tech
 ENV VITE_ACCOUNTS_URL=$VITE_ACCOUNTS_URL
@@ -22,16 +20,11 @@ ENV VITE_MERCANTEC_ISSUER=$VITE_MERCANTEC_ISSUER
 
 RUN npm run build
 
-FROM node:20-alpine AS runtime
-WORKDIR /app
+FROM nginx:1.27-alpine AS runtime
 
-COPY --from=build /app/package*.json ./
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-# preview læser vite.config.js (allowedHosts m.m.) — uden denne fil ignoreres konfigurationen
-COPY --from=build /app/vite.config.js ./vite.config.js
-
-RUN apk add --no-cache bash
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 5173
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "5173"]
+
+CMD ["nginx", "-g", "daemon off;"]

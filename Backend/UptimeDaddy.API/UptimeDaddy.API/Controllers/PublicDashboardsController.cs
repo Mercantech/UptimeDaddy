@@ -82,7 +82,6 @@ namespace UptimeDaddy.API.Controllers
                     monitorId = monitor.Id,
                     baseUrl = monitor.BaseUrl,
                     intervalTime = monitor.IntervalTime,
-                    faviconBase64 = monitor.FaviconBase64,
                     sslExpiresAt = monitor.SslExpiresAt,
                     paths = monitor.Paths.OrderBy(p => p.Path).Select(p => new
                     {

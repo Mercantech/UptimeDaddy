@@ -6,7 +6,7 @@ import UptimeBar from "../../atoms/uptimeBar/UptimeBar.jsx";
 import accents from "../../util/status/stautsAccent.jsx";
 import { formatIntervalSeconds } from "../../util/durationFormat.js";
 import "../../molecules/table/style.css";
-import TimingCell from "../../atoms/timingCell/TimingCell.jsx";
+import { monitorFaviconUrl } from "../../util/monitor.js";
 
 const POLL_MS = Number(import.meta.env.VITE_DASHBOARD_POLL_MS) || 30_000;
 
@@ -137,7 +137,7 @@ function PublicBoardPage() {
             const rollup = row.rollup ?? {};
             const paths = row.paths ?? [];
             const label = row.displayLabel?.trim() || row.baseUrl;
-            const faviconSrc = row.faviconBase64 ? `data:image/x-icon;base64,${row.faviconBase64}` : null;
+            const faviconSrc = monitorFaviconUrl(row.monitorId);
             const monitorKey = row.monitorId ?? idx;
             const isOpen = expanded.has(monitorKey);
             const latest = { statusCode: rollup.isUp ? 200 : 503, totalTimeMs: rollup.latestTotalTimeMs };

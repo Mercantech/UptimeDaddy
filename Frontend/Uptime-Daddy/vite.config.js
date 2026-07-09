@@ -8,18 +8,17 @@ export default defineConfig({
     transformer: 'postcss',
   },
   build: {
-    cssMinify: false,
+    cssMinify: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          semantic: ['semantic-ui-react'],
+        },
+      },
+    },
   },
   server: {
     allowedHosts: ['.mercantec.tech', 'localhost'],
-  },
-  preview: {
-    host: true,
-    // Bag Cloudflare Tunnel / reverse proxy: tillad det Host-header edge sender (preview er kun statisk bundle)
-    allowedHosts: true,
-    // Undgå at browser/edge holder fast i gammelt index.html + gamle hashed assets efter deploy
-    headers: {
-      'Cache-Control': 'no-store',
-    },
   },
 })

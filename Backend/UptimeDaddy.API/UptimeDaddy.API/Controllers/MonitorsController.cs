@@ -16,11 +16,16 @@ namespace UptimeDaddy.API.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IMqttPublishService _mqttPublishService;
+        private readonly MonitorDashboardService _dashboardService;
 
-        public MonitorsController(AppDbContext context, IMqttPublishService mqttPublishService)
+        public MonitorsController(
+            AppDbContext context,
+            IMqttPublishService mqttPublishService,
+            MonitorDashboardService dashboardService)
         {
             _context = context;
             _mqttPublishService = mqttPublishService;
+            _dashboardService = dashboardService;
         }
 
         private bool TryGetUserId(out long userId)
@@ -149,15 +154,33 @@ namespace UptimeDaddy.API.Controllers
         [HttpGet("user/{userId:long}/with-measurements")]
         public async Task<IActionResult> GetByUserWithMeasurements(long userId)
         {
-            var monitors = await _context.Monitors
-                .AsNoTracking()
-                .Where(m => m.UserId == userId)
-                .Include(m => m.Paths)
-                .ThenInclude(p => p.Measurements)
-                .OrderBy(m => m.BaseUrl)
-                .ToListAsync();
+            var monitors = await _dashboardService.GetDashboardMonitorsAsync(userId);
+            return Ok(monitors);
+        }
 
-            return Ok(monitors.Select(m => MapMonitor(m, true)));
+        [HttpGet("{id:long}/favicon")]
+        [AllowAnonymous]
+        [ResponseCache(Duration = 86400, Location = ResponseCacheLocation.Any)]
+        public async Task<IActionResult> GetFavicon(long id)
+        {
+            var faviconBase64 = await _context.Monitors
+                .AsNoTracking()
+                .Where(m => m.Id == id)
+                .Select(m => m.FaviconBase64)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrWhiteSpace(faviconBase64))
+                return NotFound();
+
+            try
+            {
+                var bytes = Convert.FromBase64String(faviconBase64);
+                return File(bytes, "image/x-icon");
+            }
+            catch (FormatException)
+            {
+                return NotFound();
+            }
         }
 
         [HttpGet("{id:long}")]

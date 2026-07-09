@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { Modal, Button, Input, Checkbox, Icon, Label } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import "./monitorModal.css";
@@ -6,9 +6,11 @@ import Cards from "../../atoms/cards/cards";
 import statusIcon from "../../util/status/statusIcon.jsx";
 import accents from "../../util/status/stautsAccent.jsx";
 import { API_URL, fetchCall } from "../../util/api.jsx";
-import StackedTimingChart from "../../atoms/graphs/stackedTimingChart.jsx";
 import Loader from "../../atoms/loader/loader.jsx";
 import { formatIntervalSeconds } from "../../util/durationFormat.js";
+import { pathLatest } from "../../util/monitor.js";
+
+const StackedTimingChart = lazy(() => import("../../atoms/graphs/stackedTimingChart.jsx"));
 
 function normalizeMeasurementsFromApi(rows) {
   const asc = Array.isArray(rows) ? rows : [];
@@ -39,6 +41,8 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
   const [channelOverrideStr, setChannelOverrideStr] = useState("");
   const [initialDiscord, setInitialDiscord] = useState({ enabled: false, channel: "" });
   const [notifLoaded, setNotifLoaded] = useState(false);
+  const [measurements, setMeasurements] = useState([]);
+  const [chartLoading, setChartLoading] = useState(false);
 
   useEffect(() => {
     if (parentMonitor) setIntervalStr(String(getMonitorInterval(parentMonitor)));
@@ -79,6 +83,34 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
       cancelled = true;
     };
   }, [pathId, isPath]);
+
+  useEffect(() => {
+    if (!isPath || !pathId || !monitor) {
+      setMeasurements([]);
+      return;
+    }
+
+    let cancelled = false;
+    setChartLoading(true);
+    (async () => {
+      try {
+        const rows = await fetchCall({
+          url: `${API_URL}/Measurements/path/${pathId}?hours=24`,
+        });
+        if (!cancelled) {
+          setMeasurements(normalizeMeasurementsFromApi(rows));
+        }
+      } catch {
+        if (!cancelled) setMeasurements([]);
+      } finally {
+        if (!cancelled) setChartLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathId, isPath, monitor?.id]);
 
   const parsedInterval = useMemo(() => {
     const t = intervalStr.trim();
@@ -123,8 +155,9 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
 
   if (!monitor && !loading) return null;
 
-  const measurements = isPath ? (monitor.measurements ?? []) : [];
-  const latest = measurements[0];
+  const latest = isPath
+    ? (measurements[0] ?? pathLatest(monitor))
+    : null;
 
   const items = [
     {
@@ -257,7 +290,7 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
     ? `${parentMonitor?.baseUrl}${monitor.path}`
     : parentMonitor?.baseUrl;
 
-  const chartMonitor = isPath ? { ...monitor, measurements } : null;
+  const chartMonitor = isPath && !chartLoading ? { ...monitor, measurements } : null;
 
   return (
     <Modal open={Boolean(monitor)} onClose={onClose} size="large">
@@ -353,7 +386,12 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
         )}
 
         <Cards items={items} />
-        {chartMonitor && <StackedTimingChart data={chartMonitor} />}
+        {chartMonitor && (
+          <Suspense fallback={<Loader isLoading text="Henter graf…" />}>
+            <StackedTimingChart data={chartMonitor} />
+          </Suspense>
+        )}
+        {chartLoading && <Loader isLoading text="Henter målinger…" />}
       </Modal.Content>
 
       <Modal.Actions style={{ backgroundColor: "#091413", borderTop: "1px solid #2f6d59" }}>

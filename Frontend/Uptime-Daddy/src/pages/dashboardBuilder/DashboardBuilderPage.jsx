@@ -43,7 +43,7 @@ function DashboardBuilderPage() {
   const loadMonitors = useCallback(async () => {
     if (!userId) return;
     const data = await fetchCall({
-      url: `${API_URL}/Monitors/user/${userId}/with-measurements`,
+      url: `${API_URL}/Monitors/user/${userId}`,
     });
     setMonitors(Array.isArray(data) ? data : []);
   }, [userId]);
