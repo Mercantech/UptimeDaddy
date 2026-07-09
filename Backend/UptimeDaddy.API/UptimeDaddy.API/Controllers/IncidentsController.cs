@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using UptimeDaddy.API.Data;
+using UptimeDaddy.API.Services;
 
 namespace UptimeDaddy.API.Controllers
 {
@@ -18,11 +19,10 @@ namespace UptimeDaddy.API.Controllers
             _context = context;
         }
 
-        /// <summary>Hændelseslog ved statusskift (op ↔ ned) for brugerens websites.</summary>
-        /// <param name="kind">Tom eller «all»: alle rækker. «down»: kun nedbrud (efter måling «nede»). «up»: kun genoprettelse.</param>
         [HttpGet]
         public async Task<IActionResult> Get(
-            [FromQuery] long? websiteId,
+            [FromQuery] long? monitorPathId,
+            [FromQuery] long? monitorId,
             [FromQuery] string? kind = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 50)
@@ -38,24 +38,41 @@ namespace UptimeDaddy.API.Controllers
             page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 100);
 
-            if (websiteId.HasValue)
+            if (monitorPathId.HasValue)
             {
-                var owns = await _context.Websites.AsNoTracking()
-                    .AnyAsync(w => w.Id == websiteId.Value && w.UserId == userId);
-                if (!owns)
+                var ownsPath = await _context.MonitorPaths.AsNoTracking()
+                    .Include(p => p.Monitor)
+                    .AnyAsync(p => p.Id == monitorPathId.Value && p.Monitor.UserId == userId);
+                if (!ownsPath)
+                    return Forbid();
+            }
+
+            if (monitorId.HasValue)
+            {
+                var ownsMonitor = await _context.Monitors.AsNoTracking()
+                    .AnyAsync(m => m.Id == monitorId.Value && m.UserId == userId);
+                if (!ownsMonitor)
                     return Forbid();
             }
 
             var baseQuery = _context.MonitorIncidentEvents.AsNoTracking()
                 .Join(
-                    _context.Websites.AsNoTracking(),
-                    e => e.WebsiteId,
-                    w => w.Id,
-                    (e, w) => new { Event = e, w.UserId, w.Url })
-                .Where(x => x.UserId == userId);
+                    _context.MonitorPaths.AsNoTracking(),
+                    e => e.MonitorPathId,
+                    p => p.Id,
+                    (e, p) => new { Event = e, Path = p })
+                .Join(
+                    _context.Monitors.AsNoTracking(),
+                    x => x.Path.MonitorId,
+                    m => m.Id,
+                    (x, m) => new { x.Event, x.Path, Monitor = m })
+                .Where(x => x.Monitor.UserId == userId);
 
-            if (websiteId.HasValue)
-                baseQuery = baseQuery.Where(x => x.Event.WebsiteId == websiteId.Value);
+            if (monitorPathId.HasValue)
+                baseQuery = baseQuery.Where(x => x.Event.MonitorPathId == monitorPathId.Value);
+
+            if (monitorId.HasValue)
+                baseQuery = baseQuery.Where(x => x.Monitor.Id == monitorId.Value);
 
             var kindNorm = kind?.Trim().ToLowerInvariant();
             if (kindNorm is "down")
@@ -72,8 +89,11 @@ namespace UptimeDaddy.API.Controllers
                 .Select(x => new
                 {
                     id = x.Event.Id,
-                    websiteId = x.Event.WebsiteId,
-                    websiteUrl = x.Url,
+                    monitorPathId = x.Event.MonitorPathId,
+                    monitorId = x.Monitor.Id,
+                    baseUrl = x.Monitor.BaseUrl,
+                    path = x.Path.Path,
+                    websiteUrl = x.Monitor.BaseUrl + (x.Path.Path == "/" ? "" : x.Path.Path),
                     occurredAt = x.Event.OccurredAt,
                     isUp = x.Event.IsUp,
                     statusCode = x.Event.StatusCode,

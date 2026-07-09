@@ -6,6 +6,12 @@ namespace UptimeDaddy.API.DTOs
     {
         [JsonPropertyName("pages")]
         public List<MqttPageDto> Pages { get; set; } = new();
+
+        [JsonPropertyName("monitor_id")]
+        public long? MonitorId { get; set; }
+
+        [JsonPropertyName("ssl_expires_at")]
+        public DateTime? SslExpiresAt { get; set; }
     }
 
     public class MqttPageDto
@@ -42,5 +48,8 @@ namespace UptimeDaddy.API.DTOs
 
         [JsonPropertyName("total_time")]
         public double TotalTime { get; set; }
+
+        [JsonPropertyName("keyword_matched")]
+        public bool? KeywordMatched { get; set; }
     }
 }

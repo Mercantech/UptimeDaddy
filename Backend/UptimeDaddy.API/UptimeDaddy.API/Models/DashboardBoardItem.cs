@@ -13,10 +13,10 @@ namespace UptimeDaddy.API.Models
 
         public DashboardBoard DashboardBoard { get; set; } = null!;
 
-        [Column("website_id")]
-        public long WebsiteId { get; set; }
+        [Column("monitor_id")]
+        public long MonitorId { get; set; }
 
-        public Website Website { get; set; } = null!;
+        public Monitor Monitor { get; set; } = null!;
 
         [Column("sort_order")]
         public int SortOrder { get; set; }

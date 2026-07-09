@@ -30,36 +30,34 @@ namespace UptimeDaddy.API.Services
 
         private async Task ProcessOneAsync(AppDbContext db, Measurement m, CancellationToken cancellationToken)
         {
-            var website = await db.Websites
+            var path = await db.MonitorPaths
                 .AsNoTracking()
-                .FirstOrDefaultAsync(w => w.Id == m.WebsiteId, cancellationToken);
+                .Include(p => p.Monitor)
+                .FirstOrDefaultAsync(p => p.Id == m.MonitorPathId, cancellationToken);
 
-            if (website == null)
-            {
+            if (path?.Monitor == null)
                 return;
-            }
 
-            var isUp = MonitorStatusEvaluator.IsUp(m.StatusCode);
+            var isUp = MonitorStatusEvaluator.IsMeasurementUp(m);
             var state = await db.MonitorIncidentStates
-                .FirstOrDefaultAsync(s => s.WebsiteId == website.Id, cancellationToken);
+                .FirstOrDefaultAsync(s => s.MonitorPathId == path.Id, cancellationToken);
 
             if (state == null)
             {
                 db.MonitorIncidentStates.Add(new MonitorIncidentState
                 {
-                    WebsiteId = website.Id,
+                    MonitorPathId = path.Id,
                     LastIsUp = isUp,
                     LastStatusCode = m.StatusCode,
                     LastTransitionAt = DateTime.UtcNow,
                     Initialized = true
                 });
 
-                // Første måling «nede»: log som nedbrud — ellers mangler der en fejl-række indtil første genoprettelse.
                 if (!isUp)
                 {
                     db.MonitorIncidentEvents.Add(new MonitorIncidentEvent
                     {
-                        WebsiteId = website.Id,
+                        MonitorPathId = path.Id,
                         OccurredAt = DateTime.UtcNow,
                         IsUp = false,
                         StatusCode = m.StatusCode,
@@ -96,7 +94,7 @@ namespace UptimeDaddy.API.Services
 
             db.MonitorIncidentEvents.Add(new MonitorIncidentEvent
             {
-                WebsiteId = website.Id,
+                MonitorPathId = path.Id,
                 OccurredAt = DateTime.UtcNow,
                 IsUp = isUp,
                 StatusCode = m.StatusCode,
@@ -124,7 +122,7 @@ namespace UptimeDaddy.API.Services
 
             var integration = await db.DiscordIntegrations
                 .AsNoTracking()
-                .FirstOrDefaultAsync(i => i.UserId == website.UserId, cancellationToken);
+                .FirstOrDefaultAsync(i => i.UserId == path.Monitor.UserId, cancellationToken);
 
             if (integration == null || !integration.Enabled)
             {
@@ -134,7 +132,7 @@ namespace UptimeDaddy.API.Services
 
             var sub = await db.DiscordMonitorSubscriptions
                 .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.WebsiteId == website.Id, cancellationToken);
+                .FirstOrDefaultAsync(s => s.MonitorPathId == path.Id, cancellationToken);
 
             if (sub == null || !sub.NotificationEnabled)
             {
@@ -145,12 +143,15 @@ namespace UptimeDaddy.API.Services
             state.LastNotificationSentAt = DateTime.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
 
+            var displayUrl = MonitorUrlParser.DisplayUrl(path.Monitor.BaseUrl, path.Path);
+
             var dto = new MonitorStatusNotificationEventDto
             {
                 IdempotencyKey = Guid.NewGuid().ToString("N"),
-                WorkspaceId = website.UserId,
-                WebsiteId = website.Id,
-                WebsiteUrl = website.Url,
+                WorkspaceId = path.Monitor.UserId,
+                MonitorPathId = path.Id,
+                MonitorId = path.MonitorId,
+                WebsiteUrl = displayUrl,
                 PrevStatus = prevUp ? "up" : "down",
                 Status = isUp ? "up" : "down",
                 StatusCode = m.StatusCode,

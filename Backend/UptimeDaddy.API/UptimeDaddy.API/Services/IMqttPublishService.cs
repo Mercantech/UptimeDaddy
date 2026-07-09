@@ -1,12 +1,27 @@
-using System.Threading.Tasks;
-
 namespace UptimeDaddy.API.Services
 {
     public interface IMqttPublishService
     {
-        Task PublishWebsiteCreatedAsync(long userId, long websiteId, string url, int intervalTime);
-        Task PublishWebsiteDeletedAsync(long userId, long websiteId);
-        Task PublishPingPreviewAsync(string requestId, string url);
-        Task PublishWebsiteUpdatedAsync(long userId, long websiteId, string url, int intervalTime);
+        Task PublishMonitorPathCreatedAsync(
+            long userId,
+            long monitorPathId,
+            string baseUrl,
+            string path,
+            int intervalTime,
+            string? keyword = null,
+            bool keywordMustContain = true);
+
+        Task PublishMonitorPathDeletedAsync(long userId, long monitorPathId);
+
+        Task PublishPingPreviewAsync(string requestId, string url, string? keyword = null, bool keywordMustContain = true);
+
+        Task PublishMonitorPathUpdatedAsync(
+            long userId,
+            long monitorPathId,
+            string baseUrl,
+            string path,
+            int intervalTime,
+            string? keyword = null,
+            bool keywordMustContain = true);
     }
 }

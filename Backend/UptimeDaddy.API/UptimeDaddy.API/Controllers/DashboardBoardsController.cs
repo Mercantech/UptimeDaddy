@@ -114,7 +114,7 @@ namespace UptimeDaddy.API.Controllers
                 items = ordered.Select(i => new
                 {
                     i.Id,
-                    i.WebsiteId,
+                    i.MonitorId,
                     i.SortOrder,
                     i.DisplayLabel,
                 }),
@@ -192,20 +192,20 @@ namespace UptimeDaddy.API.Controllers
                 });
 
             var itemDtos = dto.Items ?? new List<DashboardBoardItemUpdateDto>();
-            var websiteIds = itemDtos.Select(i => i.WebsiteId).Distinct().ToList();
+            var monitorIds = itemDtos.Select(i => i.MonitorId).Distinct().ToList();
 
-            if (websiteIds.Count != itemDtos.Count)
-                return BadRequest("Samme website må ikke forekomme flere gange.");
+            if (monitorIds.Count != itemDtos.Count)
+                return BadRequest("Samme monitor må ikke forekomme flere gange.");
 
-            if (websiteIds.Count > 0)
+            if (monitorIds.Count > 0)
             {
-                var owned = await _context.Websites
-                    .Where(w => w.UserId == userId && websiteIds.Contains(w.Id))
-                    .Select(w => w.Id)
+                var owned = await _context.Monitors
+                    .Where(m => m.UserId == userId && monitorIds.Contains(m.Id))
+                    .Select(m => m.Id)
                     .ToListAsync();
 
-                if (owned.Count != websiteIds.Count)
-                    return BadRequest("Et eller flere websites tilhører ikke dig.");
+                if (owned.Count != monitorIds.Count)
+                    return BadRequest("Et eller flere monitors tilhører ikke dig.");
             }
 
             board.Name = name;
@@ -220,7 +220,7 @@ namespace UptimeDaddy.API.Controllers
                 _context.DashboardBoardItems.Add(new DashboardBoardItem
                 {
                     DashboardBoardId = board.Id,
-                    WebsiteId = row.WebsiteId,
+                    MonitorId = row.MonitorId,
                     SortOrder = order++,
                     DisplayLabel = string.IsNullOrWhiteSpace(row.DisplayLabel) ? null : row.DisplayLabel.Trim(),
                 });

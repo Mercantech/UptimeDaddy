@@ -1,23 +1,22 @@
 
 class MqttBroker
-  MqttCreateResponse = Struct.new(:type, :user_id, :page_id, :path, :interval_time)
+  MqttCreateResponse = Struct.new(:type, :user_id, :page_id, :path, :interval_time, :base_url, :keyword, :keyword_must_contain, :monitor_id)
   MqttDeleteResponse = Struct.new(:type, :user_id, :page_id)
-  MqttPingRequest = Struct.new(:type, :request_id, :path)
+  MqttPingRequest = Struct.new(:type, :request_id, :path, :keyword, :keyword_must_contain)
 
   attr_reader :logger, :state, :create_page_topic, :delete_page_topic, :publish_queue, :immediate_ping_worker, :ping_request_topic, :mqtt_host, :update_page_topic, :mqtt_port
 
   def initialize(logger, state, immediate_ping_worker)
     @logger = logger
     @state = state
-    @create_page_topic = "uptime/websites/created"
-    @delete_page_topic = "uptime/websites/deleted"
+    @create_page_topic = "uptime/monitors/created"
+    @delete_page_topic = "uptime/monitors/deleted"
     @ping_request_topic = "uptime/ping/requests"
-    @update_page_topic = "uptime/websites/updated"
+    @update_page_topic = "uptime/monitors/updated"
     @publish_queue = Queue.new
     @immediate_ping_worker = immediate_ping_worker
     @mqtt_host = ENV.fetch("MQTT_HOST") { ENV.fetch("HOST", "localhost") }
     @mqtt_port = ENV.fetch("MQTT_PORT", 1883)
-
   end
 
   def start_subscriber!
@@ -109,9 +108,13 @@ class MqttBroker
       page = MqttCreateResponse.new(
         mqtt_response.fetch("type"),
         mqtt_response.fetch("userId"),
-        mqtt_response.fetch("websiteId"),
-        mqtt_response.fetch("path"),
-        mqtt_response.fetch("interval_time")
+        mqtt_response.fetch("monitorPathId"),
+        mqtt_response.fetch("fullUrl", mqtt_response["path"]),
+        mqtt_response.fetch("interval_time"),
+        mqtt_response["baseUrl"],
+        mqtt_response["keyword"],
+        mqtt_response.fetch("keyword_must_contain", true),
+        mqtt_response["monitorId"]
       )
       update_state(page)
       immediate_ping_worker.enqueue_page(page) unless topic == update_page_topic
@@ -119,14 +122,16 @@ class MqttBroker
       page = MqttDeleteResponse.new(
         mqtt_response.fetch("type"),
         mqtt_response.fetch("userId"),
-        mqtt_response.fetch("websiteId")
+        mqtt_response.fetch("monitorPathId")
       )
       update_state(page)
     when ping_request_topic
       ping_request = MqttPingRequest.new(
         mqtt_response.fetch("type"),
         mqtt_response.fetch("requestId"),
-        mqtt_response.fetch("path")
+        mqtt_response.fetch("path"),
+        mqtt_response["keyword"],
+        mqtt_response.fetch("keyword_must_contain", true)
       )
       immediate_ping_worker.quick_ping(ping_request, "uptime/ping/responses", "ping_preview_result")
     else

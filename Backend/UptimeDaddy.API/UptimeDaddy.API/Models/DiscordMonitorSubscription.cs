@@ -8,16 +8,15 @@ namespace UptimeDaddy.API.Models
         [Column("id")]
         public long Id { get; set; }
 
-        [Column("website_id")]
-        public long WebsiteId { get; set; }
+        [Column("monitor_path_id")]
+        public long MonitorPathId { get; set; }
 
         [Column("notification_enabled")]
         public bool NotificationEnabled { get; set; } = true;
 
-        /// <summary>Discord channel snowflake; null bruger workspace default.</summary>
         [Column("channel_id_override")]
         public string? ChannelIdOverride { get; set; }
 
-        public Website Website { get; set; } = null!;
+        public MonitorPath MonitorPath { get; set; } = null!;
     }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Modal, Button, Input, Checkbox, Icon } from "semantic-ui-react";
+import { Modal, Button, Input, Checkbox, Icon, Label } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import "./monitorModal.css";
 import Cards from "../../atoms/cards/cards";
@@ -10,7 +10,6 @@ import StackedTimingChart from "../../atoms/graphs/stackedTimingChart.jsx";
 import Loader from "../../atoms/loader/loader.jsx";
 import { formatIntervalSeconds } from "../../util/durationFormat.js";
 
-/** API returnerer ældste først; UI forventer nyeste først (som /with-measurements). */
 function normalizeMeasurementsFromApi(rows) {
   const asc = Array.isArray(rows) ? rows : [];
   const desc = [...asc].reverse();
@@ -22,36 +21,33 @@ function normalizeMeasurementsFromApi(rows) {
 
 function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
   const [loading, setLoading] = useState(false);
+  const isPath = monitor?.mode === "path";
+  const parentMonitor = isPath ? monitor.monitor : monitor;
+  const pathId = isPath ? monitor.id : null;
 
-  const getMonitorInterval = (website) => {
-    if (!website) return 60;
-    return Number(website.intervalTime ?? 60);
+  const getMonitorInterval = (m) => {
+    if (!m) return 60;
+    return Number(m.intervalTime ?? 60);
   };
 
-  /** Streng i feltet så brugeren kan slette alt midlertidigt uden at React “snapper” tilbage. */
   const [intervalStr, setIntervalStr] = useState(() =>
-    monitor ? String(getMonitorInterval(monitor)) : "60",
+    parentMonitor ? String(getMonitorInterval(parentMonitor)) : "60",
   );
-
   const [chartHoursStr, setChartHoursStr] = useState("");
-
+  const [keywordStr, setKeywordStr] = useState("");
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [channelOverrideStr, setChannelOverrideStr] = useState("");
-  const [initialDiscord, setInitialDiscord] = useState({
-    enabled: false,
-    channel: "",
-  });
+  const [initialDiscord, setInitialDiscord] = useState({ enabled: false, channel: "" });
   const [notifLoaded, setNotifLoaded] = useState(false);
 
   useEffect(() => {
-    if (monitor) {
-      setIntervalStr(String(getMonitorInterval(monitor)));
-      setChartHoursStr("");
-    }
+    if (parentMonitor) setIntervalStr(String(getMonitorInterval(parentMonitor)));
+    if (isPath) setKeywordStr(monitor.keyword ?? "");
+    setChartHoursStr("");
   }, [monitor]);
 
   useEffect(() => {
-    if (!monitor?.id) {
+    if (!isPath || !pathId) {
       setNotifLoaded(false);
       return;
     }
@@ -60,7 +56,7 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
     (async () => {
       try {
         const data = await fetchCall({
-          url: `${API_URL}/discord/websites/${monitor.id}/notifications`,
+          url: `${API_URL}/discord/paths/${pathId}/notifications`,
           method: "GET",
         });
         if (cancelled) return;
@@ -82,7 +78,7 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
     return () => {
       cancelled = true;
     };
-  }, [monitor?.id]);
+  }, [pathId, isPath]);
 
   const parsedInterval = useMemo(() => {
     const t = intervalStr.trim();
@@ -100,18 +96,20 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
     return Math.min(8760, n);
   }, [chartHoursStr]);
 
-  const displayInterval = parsedInterval ?? (monitor ? getMonitorInterval(monitor) : 60);
+  const displayInterval = parsedInterval ?? (parentMonitor ? getMonitorInterval(parentMonitor) : 60);
 
   const intervalDirty =
-    monitor &&
+    !isPath &&
+    parentMonitor &&
     parsedInterval !== null &&
-    parsedInterval !== Number(monitor.intervalTime ?? 60);
+    parsedInterval !== Number(parentMonitor.intervalTime ?? 60);
 
   const wantChartRefetch = Boolean(parsedChartHours);
+  const keywordDirty = isPath && keywordStr.trim() !== (monitor.keyword ?? "").trim();
 
   const discordDirty =
+    isPath &&
     notifLoaded &&
-    monitor &&
     (notifEnabled !== initialDiscord.enabled ||
       channelOverrideStr.trim() !== initialDiscord.channel);
 
@@ -119,24 +117,25 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
     monitor &&
       ((parsedInterval !== null && intervalDirty) ||
         wantChartRefetch ||
-        discordDirty),
+        discordDirty ||
+        keywordDirty),
   );
 
   if (!monitor && !loading) return null;
 
-  const measurements = monitor?.measurements ?? [];
+  const measurements = isPath ? (monitor.measurements ?? []) : [];
   const latest = measurements[0];
 
   const items = [
     {
-      header: latest ? String(latest.statusCode) : "-",
+      header: latest ? String(latest.statusCode) : parentMonitor?.rollup?.latestStatusCode ?? "-",
       description: "HTTP-status",
-      icon: statusIcon(latest?.statusCode),
-      accent: accents.statusAccent(latest?.statusCode),
+      icon: statusIcon(latest?.statusCode ?? parentMonitor?.rollup?.latestStatusCode),
+      accent: accents.statusAccent(latest?.statusCode ?? parentMonitor?.rollup?.latestStatusCode),
     },
     {
       header: formatIntervalSeconds(displayInterval),
-      description: "Ping-interval (redigér ovenfor)",
+      description: "Ping-interval",
       icon: "refresh",
       accent: "blue",
     },
@@ -172,319 +171,201 @@ function MonitorModal({ monitor, onClose, onDataChanged, onMonitorPatched }) {
     },
   ];
 
-  const handleDelete = async (website) => {
+  const handleDelete = async () => {
     setLoading(true);
-    let deleteSucceeded = false;
-
     try {
-      await fetchCall({
-        url: `${API_URL}/Websites/${website.id}`,
-        method: "DELETE",
-      });
-
-      deleteSucceeded = true;
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (isPath) {
+        await fetchCall({
+          url: `${API_URL}/Monitors/paths/${pathId}`,
+          method: "DELETE",
+        });
+      } else {
+        await fetchCall({
+          url: `${API_URL}/Monitors/${parentMonitor.id}`,
+          method: "DELETE",
+        });
+      }
+      onClose();
+      onDataChanged?.();
     } finally {
       setLoading(false);
-      onClose();
-      if (deleteSucceeded) {
-        onDataChanged?.();
-      }
     }
   };
 
-  const handleSave = async (website) => {
+  const handleSave = async () => {
     if (!canSave) return;
-
     setLoading(true);
-
     try {
-      let next = { ...website, measurements };
+      let nextMonitor = { ...parentMonitor };
 
-      if (parsedInterval !== null && intervalDirty) {
+      if (!isPath && parsedInterval !== null && intervalDirty) {
         const res = await fetchCall({
-          url: `${API_URL}/Websites/${website.id}/interval`,
+          url: `${API_URL}/Monitors/${parentMonitor.id}/interval`,
           method: "PUT",
           body: { intervalTime: parsedInterval },
         });
-        next = {
-          ...next,
-          id: res.id,
-          url: res.url,
-          intervalTime: res.intervalTime,
-          userId: res.userId,
-          faviconBase64: res.faviconBase64,
-          measurements: next.measurements,
-        };
+        nextMonitor = { ...nextMonitor, ...res, paths: nextMonitor.paths };
         setIntervalStr(String(res.intervalTime));
+      }
+
+      if (isPath && keywordDirty) {
+        await fetchCall({
+          url: `${API_URL}/Monitors/paths/${pathId}`,
+          method: "PUT",
+          body: { keyword: keywordStr.trim() || null },
+        });
       }
 
       if (discordDirty) {
         await fetchCall({
-          url: `${API_URL}/discord/websites/${website.id}/notifications`,
+          url: `${API_URL}/discord/paths/${pathId}/notifications`,
           method: "PUT",
           body: {
             notificationEnabled: notifEnabled,
-            channelIdOverride:
-              channelOverrideStr.trim() === "" ? null : channelOverrideStr.trim(),
+            channelIdOverride: channelOverrideStr.trim() === "" ? null : channelOverrideStr.trim(),
           },
         });
-        setInitialDiscord({
-          enabled: notifEnabled,
-          channel: channelOverrideStr.trim(),
-        });
+        setInitialDiscord({ enabled: notifEnabled, channel: channelOverrideStr.trim() });
       }
 
-      if (wantChartRefetch) {
+      if (wantChartRefetch && isPath) {
         const rows = await fetchCall({
-          url: `${API_URL}/Measurements/website/${website.id}?hours=${parsedChartHours}`,
+          url: `${API_URL}/Measurements/path/${pathId}?hours=${parsedChartHours}`,
         });
-        next = {
-          ...next,
+        const updatedPath = {
+          ...monitor,
           measurements: normalizeMeasurementsFromApi(rows),
         };
+        const paths = (nextMonitor.paths ?? []).map((p) => (p.id === pathId ? updatedPath : p));
+        nextMonitor = { ...nextMonitor, paths };
+        onMonitorPatched?.(nextMonitor);
+      } else if (!isPath) {
+        onMonitorPatched?.(nextMonitor);
       }
 
-      onMonitorPatched?.(next);
-
-      if (!wantChartRefetch) {
-        onDataChanged?.();
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      if (!wantChartRefetch) onDataChanged?.();
       onClose();
     } catch (e) {
       console.error(e);
-      window.alert(
-        `Kunne ikke gemme / hente data: ${e?.message ?? e}\n\n(Tjek netværk, login og at API kører.)`,
-      );
+      window.alert(`Kunne ikke gemme: ${e?.message ?? e}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const chartMonitor = monitor
-    ? { ...monitor, measurements }
-    : monitor;
+  const title = isPath
+    ? `${parentMonitor?.baseUrl}${monitor.path}`
+    : parentMonitor?.baseUrl;
+
+  const chartMonitor = isPath ? { ...monitor, measurements } : null;
 
   return (
-    <>
-      {monitor && (
-        <Modal open={Boolean(monitor)} onClose={onClose} size="large">
-          <Loader isLoading={loading} text="Opdaterer website…" />
-          <Modal.Header
-            style={{
-              backgroundColor: "#091413",
-              color: "#408A71",
-              borderBottom: "1px solid #2f6d59",
-            }}
-          >
-            <span>Monitor-detaljer</span>
-            {monitor?.url ? (
-              <div
-                style={{
-                  color: "#8aa89c",
-                  fontSize: "0.9rem",
-                  marginTop: "6px",
-                  wordBreak: "break-all",
-                }}
-              >
-                {monitor.url}
-              </div>
-            ) : null}
-          </Modal.Header>
+    <Modal open={Boolean(monitor)} onClose={onClose} size="large">
+      <Loader isLoading={loading} text="Opdaterer…" />
+      <Modal.Header style={{ backgroundColor: "#091413", color: "#408A71", borderBottom: "1px solid #2f6d59" }}>
+        <span>{isPath ? "Sti-detaljer" : "Domæne-oversigt (rollup)"}</span>
+        <div style={{ color: "#8aa89c", fontSize: "0.9rem", marginTop: "6px", wordBreak: "break-all" }}>
+          {title}
+        </div>
+        {!isPath && parentMonitor?.sslExpiresAt && (
+          <Label color="blue" style={{ marginTop: "8px" }}>
+            SSL udløber {new Date(parentMonitor.sslExpiresAt).toLocaleDateString("da-DK")}
+          </Label>
+        )}
+      </Modal.Header>
 
-          <Modal.Content style={{ backgroundColor: "#091413" }}>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "16px",
-                alignItems: "flex-end",
-                marginBottom: "1.25rem",
-                padding: "14px",
-                borderRadius: "8px",
-                border: "1px solid #2f6d59",
-                backgroundColor: "#0B1D19",
-              }}
-            >
-              <div>
-                <div
-                  style={{ color: "#B0E4CC", fontSize: "0.85rem", marginBottom: "6px" }}
-                >
-                  Ping-interval (sekunder) — gemmes på serveren
-                </div>
-                <Input
-                  size="small"
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={intervalStr}
-                  onChange={(e) => setIntervalStr(e.target.value)}
-                  label={{ basic: true, content: "Sekunder" }}
-                  labelPosition="right"
-                  placeholder="fx 300"
-                  style={{
-                    width: "220px",
-                    backgroundColor: "#091413",
-                    border: "1px solid #2f6d59",
-                    borderRadius: "6px",
-                    color: "#B0E4CC",
-                  }}
-                  input={{
-                    style: {
-                      backgroundColor: "#091413",
-                      color: "#B0E4CC",
-                      borderRadius: "6px",
-                      padding: "10px",
-                    },
-                  }}
-                />
-                <div style={{ color: "#8aa89c", fontSize: "0.78rem", marginTop: "6px" }}>
-                  Vises som {formatIntervalSeconds(displayInterval)}
-                </div>
+      <Modal.Content style={{ backgroundColor: "#091413" }}>
+        {!isPath && (
+          <div style={{ marginBottom: "1rem", padding: "14px", borderRadius: "8px", border: "1px solid #2f6d59", backgroundColor: "#0B1D19" }}>
+            <div style={{ color: "#B0E4CC", fontSize: "0.85rem", marginBottom: "6px" }}>Ping-interval (alle stier)</div>
+            <Input
+              size="small"
+              type="number"
+              min={1}
+              value={intervalStr}
+              onChange={(e) => setIntervalStr(e.target.value)}
+              label={{ basic: true, content: "Sekunder" }}
+              labelPosition="right"
+            />
+            {(parentMonitor?.paths ?? []).length > 0 && (
+              <div style={{ marginTop: "1rem", color: "#8aa89c" }}>
+                <strong style={{ color: "#B0E4CC" }}>Stier:</strong>
+                <ul style={{ margin: "0.5rem 0 0 1rem" }}>
+                  {parentMonitor.paths.map((p) => (
+                    <li key={p.id}>{p.displayLabel || p.path}</li>
+                  ))}
+                </ul>
               </div>
-              <div>
-                <div
-                  style={{ color: "#B0E4CC", fontSize: "0.85rem", marginBottom: "6px" }}
-                >
-                  Graf: seneste timer (valgfrit)
-                </div>
-                <Input
-                  size="small"
-                  type="number"
-                  min={1}
-                  max={8760}
-                  step={1}
-                  value={chartHoursStr}
-                  onChange={(e) => setChartHoursStr(e.target.value)}
-                  label={{ basic: true, content: "Timer" }}
-                  labelPosition="right"
-                  placeholder="fx 24 — tom = ikke hente"
-                  style={{
-                    width: "260px",
-                    backgroundColor: "#091413",
-                    border: "1px solid #2f6d59",
-                    borderRadius: "6px",
-                    color: "#B0E4CC",
-                  }}
-                  input={{
-                    style: {
-                      backgroundColor: "#091413",
-                      color: "#B0E4CC",
-                      borderRadius: "6px",
-                      padding: "10px",
-                    },
-                  }}
-                />
-                <div style={{ color: "#8aa89c", fontSize: "0.78rem", marginTop: "6px" }}>
-                  Udfyld og gem for GET mod{" "}
-                  <code style={{ color: "#B0E4CC" }}>/Measurements/website/…?hours=</code>
-                </div>
-              </div>
+            )}
+          </div>
+        )}
+
+        {isPath && (
+          <>
+            <div style={{ marginBottom: "1rem", padding: "14px", borderRadius: "8px", border: "1px solid #2f6d59", backgroundColor: "#0B1D19" }}>
+              <div style={{ color: "#B0E4CC", fontSize: "0.85rem", marginBottom: "6px" }}>Forventet tekst i svar (keyword)</div>
+              <Input
+                placeholder='fx "OK" eller "healthy"'
+                value={keywordStr}
+                onChange={(e) => setKeywordStr(e.target.value)}
+                style={{ width: "100%" }}
+              />
             </div>
-
-            <div className="monitor-modal-discord monitor-modal-discord--compact">
-              <div className="monitor-modal-discord__accent" aria-hidden />
-              <div className="monitor-modal-discord__inner">
-                <div className="monitor-modal-discord__top">
-                  <h3 className="monitor-modal-discord__title">Discord-alarm</h3>
-                  <div className="monitor-modal-discord__badges">
-                    <span className="monitor-modal-discord__badge">Nedetid</span>
-                    <span className="monitor-modal-discord__badge">Genoprettet</span>
-                    <span className="monitor-modal-discord__badge monitor-modal-discord__badge--muted">
-                      Valgfri kanal
-                    </span>
-                  </div>
-                </div>
-
-                <p className="monitor-modal-discord__hint">
-                  Ved statusskift til <strong>ikke oppe</strong> og når servicen er <strong>oppe igen</strong>,
-                  kan Uptime Daddy poste i Discord — hvis alarmen er aktiv og{" "}
-                  <Link to="/settings" className="monitor-modal-discord__hint-link">
-                    integrationen
-                  </Link>{" "}
-                  under Settings er udfyldt.
-                </p>
-
-                {!notifLoaded ? (
-                  <div className="monitor-modal-discord__loading">
-                    <Icon name="spinner" loading />
-                    <span>Henter alarm-indstillinger…</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="monitor-modal-discord__toggle-row">
-                      <div className="monitor-modal-discord__toggle-rail">
-                        <Checkbox
-                          toggle
-                          label=" "
-                          checked={notifEnabled}
-                          onChange={(_, d) => setNotifEnabled(Boolean(d.checked))}
-                          aria-label="Slå Discord-alarm til eller fra"
-                        />
-                      </div>
-                      <p
-                        className="monitor-modal-discord__toggle-caption"
-                        onClick={() => setNotifEnabled((v) => !v)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setNotifEnabled((v) => !v);
-                          }
-                        }}
-                        role="button"
-                        tabIndex={0}
-                      >
-                        Alarm til Discord
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="monitor-modal-discord__field-label" htmlFor="discord-channel-override">
-                        Kanal-ID
-                      </label>
-                      <Input
-                        id="discord-channel-override"
-                        className="monitor-modal-discord__input"
-                        placeholder="Tom = standardkanal fra Settings"
-                        value={channelOverrideStr}
-                        onChange={(e) => setChannelOverrideStr(e.target.value)}
-                        style={{ maxWidth: "100%" }}
-                      />
-                      <span className="monitor-modal-discord__field-hint">
-                        Tom = standardkanal fra Settings.
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
+            <div style={{ marginBottom: "1rem" }}>
+              <div style={{ color: "#B0E4CC", fontSize: "0.85rem", marginBottom: "6px" }}>Graf: seneste timer</div>
+              <Input
+                type="number"
+                min={1}
+                value={chartHoursStr}
+                onChange={(e) => setChartHoursStr(e.target.value)}
+                placeholder="fx 24"
+              />
             </div>
+          </>
+        )}
 
-            <Cards items={items} />
-            <StackedTimingChart data={chartMonitor} />
-          </Modal.Content>
+        {isPath && (
+          <div className="monitor-modal-discord monitor-modal-discord--compact">
+            <div className="monitor-modal-discord__inner">
+              <h3 className="monitor-modal-discord__title">Discord-alarm (per sti)</h3>
+              {!notifLoaded ? (
+                <div className="monitor-modal-discord__loading">
+                  <Icon name="spinner" loading />
+                  <span>Henter alarm-indstillinger…</span>
+                </div>
+              ) : (
+                <>
+                  <Checkbox toggle checked={notifEnabled} onChange={(_, d) => setNotifEnabled(Boolean(d.checked))} label="Alarm til Discord" />
+                  <Input
+                    className="monitor-modal-discord__input"
+                    placeholder="Tom = standardkanal fra Settings"
+                    value={channelOverrideStr}
+                    onChange={(e) => setChannelOverrideStr(e.target.value)}
+                    style={{ marginTop: "0.75rem" }}
+                  />
+                  <Link to="/settings" className="monitor-modal-discord__hint-link" style={{ display: "block", marginTop: "0.5rem" }}>
+                    Discord-integration under Settings
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
-          <Modal.Actions
-            style={{ backgroundColor: "#091413", borderTop: "1px solid #2f6d59" }}
-          >
-            <Button onClick={onClose}>Luk</Button>
-            <Button onClick={() => handleDelete(monitor)} negative disabled={loading}>
-              Slet Website
-            </Button>
-            <Button
-              onClick={() => handleSave(monitor)}
-              primary
-              disabled={loading || !canSave}
-              style={{ backgroundColor: "#1F8B68", borderColor: "#2f6d59" }}
-            >
-              Gem
-            </Button>
-          </Modal.Actions>
-        </Modal>
-      )}
-    </>
+        <Cards items={items} />
+        {chartMonitor && <StackedTimingChart data={chartMonitor} />}
+      </Modal.Content>
+
+      <Modal.Actions style={{ backgroundColor: "#091413", borderTop: "1px solid #2f6d59" }}>
+        <Button onClick={onClose}>Luk</Button>
+        <Button onClick={handleDelete} negative disabled={loading}>
+          {isPath ? "Slet sti" : "Slet monitor"}
+        </Button>
+        <Button onClick={handleSave} primary disabled={loading || !canSave}>
+          Gem
+        </Button>
+      </Modal.Actions>
+    </Modal>
   );
 }
 

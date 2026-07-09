@@ -89,3 +89,16 @@
   margin-top: 2px;
   font-variant-numeric: tabular-nums;
 }
+
+.monitor-table .url-cell-content--indent {
+  padding-left: 1.25rem;
+}
+
+.monitor-table__path-row td {
+  background-color: #0c1916 !important;
+}
+
+.monitor-table .favicon-placeholder--small {
+  width: 1.25rem;
+  opacity: 0.6;
+}

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Icon } from "semantic-ui-react";
-import { isUpStatusCode, uptimeStatusLabel, computeUptimePercent } from "../../util/uptimeStatus.js";
+import { isMeasurementUp, uptimeStatusLabel, computeUptimePercent } from "../../util/uptimeStatus.js";
 import "./uptimeBar.css";
 
 const MAX_SEGMENTS = 24;
@@ -14,26 +14,29 @@ function formatTooltip(m) {
         timeStyle: "medium",
       })
     : "";
-  return `${isUpStatusCode(m.statusCode) ? "Oppe" : "Nede"} · HTTP ${code}${at ? ` · ${at}` : ""}`;
+  const up = isMeasurementUp(m);
+  return `${up ? "Oppe" : "Nede"} · HTTP ${code}${at ? ` · ${at}` : ""}`;
 }
 
-/**
- * Uptime Kuma-inspireret: striber = seneste målinger (ældst til venstre, nyeste til højre).
- */
-function UptimeBar({ measurements = [] }) {
+function UptimeBar({ measurements = [], rollupSegments = null, rollupPercent = null }) {
   const latest = measurements[0];
-  const up = isUpStatusCode(latest?.statusCode);
-  const label = uptimeStatusLabel(latest?.statusCode);
-  const pct = computeUptimePercent(measurements);
+  const up = rollupSegments
+    ? rollupSegments[rollupSegments.length - 1] !== false
+    : isMeasurementUp(latest);
+  const label = rollupSegments ? (up ? "Oppe" : "Nede") : uptimeStatusLabel(latest?.statusCode, latest);
+  const pct = rollupPercent ?? computeUptimePercent(measurements);
   const pctLabel =
     pct != null
       ? `${pct.toLocaleString("da-DK", { maximumFractionDigits: 4, minimumFractionDigits: 1 })}% oppe`
       : null;
 
   const segments = useMemo(() => {
+    if (rollupSegments) {
+      return rollupSegments.slice(-MAX_SEGMENTS);
+    }
     const slice = measurements.slice(0, MAX_SEGMENTS);
     return [...slice].reverse();
-  }, [measurements]);
+  }, [measurements, rollupSegments]);
 
   const padded = useMemo(() => {
     const out = [...segments];
@@ -43,7 +46,9 @@ function UptimeBar({ measurements = [] }) {
     return out;
   }, [segments]);
 
-  if (!measurements?.length) {
+  const hasData = rollupSegments?.some((s) => s != null) || measurements?.length > 0;
+
+  if (!hasData) {
     return (
       <div className="uptime-bar uptime-bar--empty">
         <div className="uptime-bar__meta">
@@ -75,26 +80,38 @@ function UptimeBar({ measurements = [] }) {
         {pctLabel && (
           <span
             className={`uptime-bar__percent ${up ? "uptime-bar__percent--ok" : "uptime-bar__percent--bad"}`}
-            title={`Baseret på ${measurements.length} gemte målinger (HTTP 2xx–3xx tæller som oppe)`}
+            title="Baseret på gemte målinger (HTTP 2xx tæller som oppe)"
           >
             {pctLabel}
           </span>
         )}
       </div>
       <div className="uptime-bar__strip" role="img" aria-label={`Seneste checks: ${label}`}>
-        {padded.map((m, i) =>
-          m == null ? (
-            <div key={`e-${i}`} className="uptime-bar__segment uptime-bar__segment--empty" />
-          ) : (
+        {padded.map((m, i) => {
+          if (rollupSegments) {
+            if (m == null) {
+              return <div key={`e-${i}`} className="uptime-bar__segment uptime-bar__segment--empty" />;
+            }
+            return (
+              <div
+                key={`r-${i}`}
+                className={`uptime-bar__segment ${m ? "uptime-bar__segment--up" : "uptime-bar__segment--down"}`}
+              />
+            );
+          }
+          if (m == null) {
+            return <div key={`e-${i}`} className="uptime-bar__segment uptime-bar__segment--empty" />;
+          }
+          return (
             <div
               key={m.id ?? `${i}-${m.createdAt}`}
               className={`uptime-bar__segment ${
-                isUpStatusCode(m.statusCode) ? "uptime-bar__segment--up" : "uptime-bar__segment--down"
+                isMeasurementUp(m) ? "uptime-bar__segment--up" : "uptime-bar__segment--down"
               }`}
               title={formatTooltip(m)}
             />
-          )
-        )}
+          );
+        })}
       </div>
     </div>
   );

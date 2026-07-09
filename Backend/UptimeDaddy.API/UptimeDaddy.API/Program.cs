@@ -26,6 +26,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddSingleton<IMqttPublishService, MqttPublishService>();
 builder.Services.AddSingleton<INotificationEventPublisher, MqttNotificationEventPublisher>();
 builder.Services.AddScoped<MonitorStatusAlertService>();
+builder.Services.AddScoped<SslExpiryAlertService>();
 builder.Services.AddSingleton<PingPreviewService>();
 builder.Services.AddHostedService<MqttService>();
 

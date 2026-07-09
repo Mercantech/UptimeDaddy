@@ -2,14 +2,13 @@ using System.Text.Json.Serialization;
 
 namespace UptimeDaddy.API.DTOs.DiscordEvents
 {
-    /// <summary>MQTT topic: uptime/discord/notification_events</summary>
     public class MonitorStatusNotificationEventDto
     {
         [JsonPropertyName("eventType")]
         public string EventType { get; set; } = "monitor_status";
 
         [JsonPropertyName("eventVersion")]
-        public int EventVersion { get; set; } = 1;
+        public int EventVersion { get; set; } = 2;
 
         [JsonPropertyName("idempotencyKey")]
         public string IdempotencyKey { get; set; } = string.Empty;
@@ -17,17 +16,21 @@ namespace UptimeDaddy.API.DTOs.DiscordEvents
         [JsonPropertyName("workspaceId")]
         public long WorkspaceId { get; set; }
 
+        [JsonPropertyName("monitorPathId")]
+        public long MonitorPathId { get; set; }
+
+        [JsonPropertyName("monitorId")]
+        public long MonitorId { get; set; }
+
         [JsonPropertyName("websiteId")]
-        public long WebsiteId { get; set; }
+        public long WebsiteId => MonitorPathId;
 
         [JsonPropertyName("websiteUrl")]
         public string WebsiteUrl { get; set; } = string.Empty;
 
-        /// <summary>unknown | up | down</summary>
         [JsonPropertyName("prevStatus")]
         public string PrevStatus { get; set; } = "unknown";
 
-        /// <summary>up | down</summary>
         [JsonPropertyName("status")]
         public string Status { get; set; } = string.Empty;
 
@@ -40,7 +43,6 @@ namespace UptimeDaddy.API.DTOs.DiscordEvents
         [JsonPropertyName("totalTimeMs")]
         public double TotalTimeMs { get; set; }
 
-        /// <summary>Ved genoprettelse: samlet nedetid i ms (sidste ned-skift → denne måling).</summary>
         [JsonPropertyName("downtimeDurationMs")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public double? DowntimeDurationMs { get; set; }

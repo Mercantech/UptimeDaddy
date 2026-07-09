@@ -60,24 +60,25 @@ namespace UptimeDaddy.API.Services
 
                         foreach (var page in message.Pages)
                         {
-                            var websiteExists = await context.Websites
-                                .AnyAsync(w => w.Id == page.Id, stoppingToken);
+                            var pathExists = await context.MonitorPaths
+                                .AnyAsync(p => p.Id == page.Id, stoppingToken);
 
-                            if (!websiteExists)
+                            if (!pathExists)
                             {
-                                Console.WriteLine($"Website {page.Id} not found. Skipping measurement.");
+                                Console.WriteLine($"MonitorPath {page.Id} not found. Skipping measurement.");
                                 continue;
                             }
 
                             var measurement = new Measurement
                             {
-                                WebsiteId = page.Id,
+                                MonitorPathId = page.Id,
                                 StatusCode = int.TryParse(page.Response.Status, out var statusCode) ? statusCode : 0,
                                 DnsLookupMs = page.Response.DnsLookup,
                                 ConnectMs = page.Response.ConnectToPage,
                                 TlsHandshakeMs = page.Response.TlsHandShake,
                                 TimeToFirstByteMs = page.Response.TimeToFirstByte,
                                 TotalTimeMs = page.Response.TotalTime,
+                                KeywordMatched = page.Response.KeywordMatched,
                                 CreatedAt = DateTime.UtcNow
                             };
 
@@ -92,6 +93,20 @@ namespace UptimeDaddy.API.Services
                         {
                             var alertService = scope.ServiceProvider.GetRequiredService<MonitorStatusAlertService>();
                             await alertService.ProcessNewMeasurementsAsync(context, savedBatch, stoppingToken);
+                        }
+
+                        if (message.SslExpiresAt.HasValue && message.MonitorId.HasValue)
+                        {
+                            var monitor = await context.Monitors
+                                .FirstOrDefaultAsync(m => m.Id == message.MonitorId.Value, stoppingToken);
+                            if (monitor != null)
+                            {
+                                monitor.SslExpiresAt = message.SslExpiresAt;
+                                await context.SaveChangesAsync(stoppingToken);
+
+                                var sslAlert = scope.ServiceProvider.GetRequiredService<SslExpiryAlertService>();
+                                await sslAlert.CheckAndNotifyAsync(context, monitor.Id, stoppingToken);
+                            }
                         }
                     }
                     else if (topic == "uptime/ping/responses")
@@ -121,10 +136,7 @@ namespace UptimeDaddy.API.Services
                             return;
                         }
 
-                        Console.WriteLine($"Favicon message: Id={faviconMessage.Id}, UserId={faviconMessage.UserId}, Path={faviconMessage.Path}");
-                        Console.WriteLine($"Favicon længde: {faviconMessage.Favicon?.Length ?? 0}");
-
-                        if (faviconMessage.Id <= 0 || string.IsNullOrWhiteSpace(faviconMessage.Favicon))
+                        if (faviconMessage.MonitorId <= 0 || string.IsNullOrWhiteSpace(faviconMessage.Favicon))
                         {
                             Console.WriteLine("Invalid favicon payload.");
                             return;
@@ -133,23 +145,20 @@ namespace UptimeDaddy.API.Services
                         using var scope = _scopeFactory.CreateScope();
                         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                        var website = await context.Websites
-                            .FirstOrDefaultAsync(w => w.Id == faviconMessage.Id && w.UserId == faviconMessage.UserId, stoppingToken);
+                        var monitor = await context.Monitors
+                            .FirstOrDefaultAsync(
+                                m => m.Id == faviconMessage.MonitorId && m.UserId == faviconMessage.UserId,
+                                stoppingToken);
 
-                        if (website == null)
+                        if (monitor == null)
                         {
-                            Console.WriteLine($"Website ikke fundet. Id={faviconMessage.Id}, UserId={faviconMessage.UserId}");
+                            Console.WriteLine($"Monitor ikke fundet. Id={faviconMessage.MonitorId}");
                             return;
                         }
 
-                        Console.WriteLine($"Website fundet. Eksisterende favicon længde: {website.FaviconBase64?.Length ?? 0}");
-
-                        website.FaviconBase64 = faviconMessage.Favicon;
-                        context.Entry(website).Property(w => w.FaviconBase64).IsModified = true;
-
-                        var rows = await context.SaveChangesAsync(stoppingToken);
-
-                        Console.WriteLine($"Favicon updated for website {faviconMessage.Id}. Rows affected: {rows}");
+                        monitor.FaviconBase64 = faviconMessage.Favicon;
+                        context.Entry(monitor).Property(m => m.FaviconBase64).IsModified = true;
+                        await context.SaveChangesAsync(stoppingToken);
                     }
                 }
                 catch (Exception ex)
@@ -169,7 +178,7 @@ namespace UptimeDaddy.API.Services
                 await _client.SubscribeAsync("uptime/ping/responses", cancellationToken: stoppingToken);
                 await _client.SubscribeAsync("uptime/update_favicon", cancellationToken: stoppingToken);
 
-                Console.WriteLine("MQTT connected and subscribed to uptime/measurements, uptime/ping/responses and uptime/update_favicon");
+                Console.WriteLine("MQTT connected and subscribed.");
             }
             catch (Exception ex)
             {

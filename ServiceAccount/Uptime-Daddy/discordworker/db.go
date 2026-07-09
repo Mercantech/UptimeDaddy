@@ -33,24 +33,25 @@ type resolvedChannel struct {
 	ChannelID string
 }
 
-func resolveChannelForWebsite(ctx context.Context, pool *pgxpool.Pool, websiteID int64) (*resolvedChannel, error) {
+func resolveChannelForWebsite(ctx context.Context, pool *pgxpool.Pool, monitorPathID int64) (*resolvedChannel, error) {
 	const q = `
 SELECT COALESCE(NULLIF(TRIM(ds.channel_id_override), ''), NULLIF(TRIM(di.default_channel_id), '')) AS channel_id
-FROM websites w
-JOIN discord_integrations di ON di.user_id = w.user_id AND di.enabled = TRUE
-JOIN discord_monitor_subscriptions ds ON ds.website_id = w.id AND ds.notification_enabled = TRUE
-WHERE w.id = $1
+FROM monitor_paths mp
+JOIN monitors m ON m.id = mp.monitor_id
+JOIN discord_integrations di ON di.user_id = m.user_id AND di.enabled = TRUE
+JOIN discord_monitor_subscriptions ds ON ds.monitor_path_id = mp.id AND ds.notification_enabled = TRUE
+WHERE mp.id = $1
 LIMIT 1`
 	var ch string
-	err := pool.QueryRow(ctx, q, websiteID).Scan(&ch)
+	err := pool.QueryRow(ctx, q, monitorPathID).Scan(&ch)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, fmt.Errorf("ingen aktiv discord-konfiguration for website %d", websiteID)
+			return nil, fmt.Errorf("ingen aktiv discord-konfiguration for monitor-sti %d", monitorPathID)
 		}
 		return nil, err
 	}
 	if strings.TrimSpace(ch) == "" {
-		return nil, fmt.Errorf("tom kanal for website %d", websiteID)
+		return nil, fmt.Errorf("tom kanal for monitor-sti %d", monitorPathID)
 	}
 	return &resolvedChannel{ChannelID: strings.TrimSpace(ch)}, nil
 }

@@ -19,7 +19,7 @@ function DashboardBuilderPage() {
   const authPayload = getAuthPayload();
   const userId = authPayload?.userId;
 
-  const [websites, setWebsites] = useState([]);
+  const [monitors, setMonitors] = useState([]);
   const [boards, setBoards] = useState([]);
   const [selectedBoardId, setSelectedBoardId] = useState(null);
   const [boardName, setBoardName] = useState("");
@@ -29,23 +29,23 @@ function DashboardBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [copyMsg, setCopyMsg] = useState(null);
 
-  const websiteById = useMemo(() => {
+  const monitorById = useMemo(() => {
     const m = new Map();
-    for (const w of websites) m.set(w.id, w);
+    for (const w of monitors) m.set(w.id, w);
     return m;
-  }, [websites]);
+  }, [monitors]);
 
   const loadBoards = useCallback(async () => {
     const list = await fetchCall({ url: `${API_URL}/dashboard-boards` });
     setBoards(Array.isArray(list) ? list : []);
   }, []);
 
-  const loadWebsites = useCallback(async () => {
+  const loadMonitors = useCallback(async () => {
     if (!userId) return;
     const data = await fetchCall({
-      url: `${API_URL}/Websites/user/${userId}/with-measurements`,
+      url: `${API_URL}/Monitors/user/${userId}/with-measurements`,
     });
-    setWebsites(Array.isArray(data) ? data : []);
+    setMonitors(Array.isArray(data) ? data : []);
   }, [userId]);
 
   const loadBoardDetail = useCallback(async (id) => {
@@ -56,7 +56,7 @@ function DashboardBuilderPage() {
     items.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     setOrderedItems(
       items.map((i) => ({
-        websiteId: i.websiteId,
+        monitorId: i.monitorId,
         displayLabel: i.displayLabel ?? "",
       }))
     );
@@ -71,7 +71,7 @@ function DashboardBuilderPage() {
     (async () => {
       setLoading(true);
       try {
-        await Promise.all([loadWebsites(), loadBoards()]);
+        await Promise.all([loadMonitors(), loadBoards()]);
       } catch (e) {
         console.error(e);
       } finally {
@@ -81,7 +81,7 @@ function DashboardBuilderPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, loadWebsites, loadBoards]);
+  }, [userId, loadMonitors, loadBoards]);
 
   useEffect(() => {
     if (!selectedBoardId) {
@@ -109,14 +109,14 @@ function DashboardBuilderPage() {
     text: `${b.name} · #${b.id} · ${b.itemCount ?? 0} sites`,
   }));
 
-  const toggleWebsite = (websiteId, checked) => {
+  const toggleMonitor = (monitorId, checked) => {
     if (checked) {
       setOrderedItems((prev) => {
-        if (prev.some((x) => x.websiteId === websiteId)) return prev;
-        return [...prev, { websiteId, displayLabel: "" }];
+        if (prev.some((x) => x.monitorId === monitorId)) return prev;
+        return [...prev, { monitorId, displayLabel: "" }];
       });
     } else {
-      setOrderedItems((prev) => prev.filter((x) => x.websiteId !== websiteId));
+      setOrderedItems((prev) => prev.filter((x) => x.monitorId !== monitorId));
     }
   };
 
@@ -130,10 +130,10 @@ function DashboardBuilderPage() {
     });
   };
 
-  const updateLabel = (websiteId, value) => {
+  const updateLabel = (monitorId, value) => {
     setOrderedItems((prev) =>
       prev.map((row) =>
-        row.websiteId === websiteId ? { ...row, displayLabel: value } : row
+        row.monitorId === monitorId ? { ...row, displayLabel: value } : row
       )
     );
   };
@@ -179,7 +179,7 @@ function DashboardBuilderPage() {
           name: boardName.trim(),
           isPublished,
           items: orderedItems.map((row, i) => ({
-            websiteId: row.websiteId,
+            monitorId: row.monitorId,
             sortOrder: i,
             displayLabel: row.displayLabel?.trim() || null,
           })),
@@ -367,7 +367,7 @@ function DashboardBuilderPage() {
                     ) : null}
 
                     <Header as="h3" style={{ color: "#408A71", marginTop: "1.5rem" }}>
-                      Websites på boardet
+                      Monitors på boardet
                     </Header>
                     <p style={{ color: "#8aa89c", fontSize: "0.9rem" }}>
                       Afkryds sites og brug pilene for rækkefølge. Valgfrit visningsnavn pr. række.
@@ -383,8 +383,8 @@ function DashboardBuilderPage() {
                         paddingRight: "6px",
                       }}
                     >
-                      {websites.map((w) => {
-                        const on = orderedItems.some((x) => x.websiteId === w.id);
+                      {monitors.map((w) => {
+                        const on = orderedItems.some((x) => x.monitorId === w.id);
                         return (
                           <div
                             key={w.id}
@@ -400,9 +400,9 @@ function DashboardBuilderPage() {
                           >
                             <Checkbox
                               checked={on}
-                              onChange={(_, d) => toggleWebsite(w.id, d.checked)}
+                              onChange={(_, d) => toggleMonitor(w.id, d.checked)}
                             />
-                            <span style={{ color: "#e8fff6", flex: 1 }}>{w.url}</span>
+                            <span style={{ color: "#e8fff6", flex: 1 }}>{w.baseUrl}</span>
                           </div>
                         );
                       })}
@@ -414,10 +414,10 @@ function DashboardBuilderPage() {
                           Rækkefølge ({orderedItems.length})
                         </Header>
                         {orderedItems.map((row, idx) => {
-                          const w = websiteById.get(row.websiteId);
+                          const w = monitorById.get(row.monitorId);
                           return (
                             <div
-                              key={row.websiteId}
+                              key={row.monitorId}
                               style={{
                                 display: "grid",
                                 gridTemplateColumns: "auto 1fr auto",
@@ -451,12 +451,12 @@ function DashboardBuilderPage() {
                                 </Button>
                               </div>
                               <div>
-                                <div style={{ color: "#8aa89c", fontSize: "0.8rem" }}>{w?.url ?? `#${row.websiteId}`}</div>
+                                <div style={{ color: "#8aa89c", fontSize: "0.8rem" }}>{w?.baseUrl ?? `#${row.monitorId}`}</div>
                                 <Input
                                   size="small"
                                   placeholder="Valgfrit visningsnavn"
                                   value={row.displayLabel}
-                                  onChange={(e) => updateLabel(row.websiteId, e.target.value)}
+                                  onChange={(e) => updateLabel(row.monitorId, e.target.value)}
                                   style={{ marginTop: "6px", width: "100%" }}
                                   input={{ style: { backgroundColor: "#091413", color: "#e8fff6" } }}
                                 />

@@ -10,7 +10,8 @@ namespace UptimeDaddy.API.Data
         }
 
         public DbSet<User> Users { get; set; }
-        public DbSet<Website> Websites { get; set; }
+        public DbSet<Monitor> Monitors { get; set; }
+        public DbSet<MonitorPath> MonitorPaths { get; set; }
         public DbSet<Measurement> Measurements { get; set; }
         public DbSet<DashboardBoard> DashboardBoards { get; set; }
         public DbSet<DashboardBoardItem> DashboardBoardItems { get; set; }
@@ -25,9 +26,9 @@ namespace UptimeDaddy.API.Data
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<User>()
-                .HasMany(u => u.Websites)
-                .WithOne(w => w.User)
-                .HasForeignKey(w => w.UserId);
+                .HasMany(u => u.Monitors)
+                .WithOne(m => m.User)
+                .HasForeignKey(m => m.UserId);
 
             modelBuilder.Entity<User>()
                 .HasMany(u => u.DashboardBoards)
@@ -55,7 +56,6 @@ namespace UptimeDaddy.API.Data
                 .IsUnique()
                 .HasDatabaseName("ix_dashboard_boards_user_id_name_unique");
 
-            // Ét publiceret board pr. offentligt ID (navn), så /b/{id} er entydigt.
             modelBuilder.Entity<DashboardBoard>()
                 .HasIndex(b => b.Name)
                 .IsUnique()
@@ -66,25 +66,41 @@ namespace UptimeDaddy.API.Data
                 .HasIndex(i => new { i.DashboardBoardId, i.SortOrder })
                 .HasDatabaseName("ix_dashboard_board_items_board_sort");
 
-            modelBuilder.Entity<Website>()
-                .HasMany(w => w.Measurements)
-                .WithOne(m => m.Website)
-                .HasForeignKey(m => m.WebsiteId);
-
-            modelBuilder.Entity<Website>()
-                .HasMany(w => w.DashboardBoardItems)
-                .WithOne(i => i.Website)
-                .HasForeignKey(i => i.WebsiteId)
+            modelBuilder.Entity<Monitor>()
+                .HasMany(m => m.Paths)
+                .WithOne(p => p.Monitor)
+                .HasForeignKey(p => p.MonitorId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Website>()
-                .HasIndex(w => w.UserId)
-                .HasDatabaseName("ix_websites_user_id");
+            modelBuilder.Entity<Monitor>()
+                .HasMany(m => m.DashboardBoardItems)
+                .WithOne(i => i.Monitor)
+                .HasForeignKey(i => i.MonitorId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Monitor>()
+                .HasIndex(m => m.UserId)
+                .HasDatabaseName("ix_monitors_user_id");
+
+            modelBuilder.Entity<Monitor>()
+                .HasIndex(m => new { m.UserId, m.BaseUrl })
+                .IsUnique()
+                .HasDatabaseName("ix_monitors_user_id_base_url_unique");
+
+            modelBuilder.Entity<MonitorPath>()
+                .HasIndex(p => new { p.MonitorId, p.Path })
+                .IsUnique()
+                .HasDatabaseName("ix_monitor_paths_monitor_id_path_unique");
+
+            modelBuilder.Entity<MonitorPath>()
+                .HasMany(p => p.Measurements)
+                .WithOne(m => m.MonitorPath)
+                .HasForeignKey(m => m.MonitorPathId);
 
             modelBuilder.Entity<Measurement>()
-                .HasIndex(m => new { m.WebsiteId, m.CreatedAt })
+                .HasIndex(m => new { m.MonitorPathId, m.CreatedAt })
                 .IsDescending(false, true)
-                .HasDatabaseName("ix_measurements_website_id_created_at_desc");
+                .HasDatabaseName("ix_measurements_monitor_path_id_created_at_desc");
 
             modelBuilder.Entity<DiscordIntegration>()
                 .HasOne(i => i.User)
@@ -98,15 +114,15 @@ namespace UptimeDaddy.API.Data
                 .HasDatabaseName("ix_discord_integrations_user_id_unique");
 
             modelBuilder.Entity<DiscordMonitorSubscription>()
-                .HasOne(s => s.Website)
-                .WithOne(w => w.DiscordMonitorSubscription)
-                .HasForeignKey<DiscordMonitorSubscription>(s => s.WebsiteId)
+                .HasOne(s => s.MonitorPath)
+                .WithOne(p => p.DiscordMonitorSubscription)
+                .HasForeignKey<DiscordMonitorSubscription>(s => s.MonitorPathId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<DiscordMonitorSubscription>()
-                .HasIndex(s => s.WebsiteId)
+                .HasIndex(s => s.MonitorPathId)
                 .IsUnique()
-                .HasDatabaseName("ix_discord_monitor_subscriptions_website_id_unique");
+                .HasDatabaseName("ix_discord_monitor_subscriptions_monitor_path_id_unique");
 
             modelBuilder.Entity<DiscordReportSchedule>()
                 .HasOne(s => s.User)
@@ -119,24 +135,24 @@ namespace UptimeDaddy.API.Data
                 .HasDatabaseName("ix_discord_report_schedules_user_id");
 
             modelBuilder.Entity<MonitorIncidentState>()
-                .HasOne(s => s.Website)
-                .WithOne(w => w.MonitorIncidentState)
-                .HasForeignKey<MonitorIncidentState>(s => s.WebsiteId)
+                .HasOne(s => s.MonitorPath)
+                .WithOne(p => p.MonitorIncidentState)
+                .HasForeignKey<MonitorIncidentState>(s => s.MonitorPathId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<MonitorIncidentState>()
-                .HasKey(s => s.WebsiteId);
+                .HasKey(s => s.MonitorPathId);
 
             modelBuilder.Entity<MonitorIncidentEvent>()
-                .HasOne(e => e.Website)
+                .HasOne(e => e.MonitorPath)
                 .WithMany()
-                .HasForeignKey(e => e.WebsiteId)
+                .HasForeignKey(e => e.MonitorPathId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<MonitorIncidentEvent>()
-                .HasIndex(e => new { e.WebsiteId, e.OccurredAt })
+                .HasIndex(e => new { e.MonitorPathId, e.OccurredAt })
                 .IsDescending(false, true)
-                .HasDatabaseName("ix_monitor_incident_events_website_occurred_desc");
+                .HasDatabaseName("ix_monitor_incident_events_path_occurred_desc");
         }
     }
 }

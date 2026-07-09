@@ -63,8 +63,8 @@ export default function IncidentsPage() {
     const authPayload = getAuthPayload();
     const userId = authPayload?.userId;
 
-    const [websites, setWebsites] = useState([]);
-    const [filterWebsiteId, setFilterWebsiteId] = useState(null);
+    const [pathOptions, setPathOptions] = useState([]);
+    const [filterMonitorPathId, setFilterMonitorPathId] = useState(null);
     /** «all» | «down» | «up» — nedbrud vs genoprettelse */
     const [kind, setKind] = useState("all");
     const [page, setPage] = useState(1);
@@ -72,15 +72,24 @@ export default function IncidentsPage() {
     const [error, setError] = useState(null);
     const [payload, setPayload] = useState(null);
 
-    const loadWebsites = useCallback(async () => {
+    const loadPathOptions = useCallback(async () => {
         if (!userId) return;
         try {
             const list = await fetchCall({
-                url: `${API_URL}/Websites/user/${userId}`,
+                url: `${API_URL}/Monitors/user/${userId}`,
             });
-            setWebsites(Array.isArray(list) ? list : []);
+            const opts = [];
+            for (const m of Array.isArray(list) ? list : []) {
+                for (const p of m.paths ?? []) {
+                    opts.push({
+                        monitorPathId: p.id,
+                        label: `${m.baseUrl}${p.path === "/" ? "" : p.path}`,
+                    });
+                }
+            }
+            setPathOptions(opts);
         } catch {
-            setWebsites([]);
+            setPathOptions([]);
         }
     }, [userId]);
 
@@ -93,8 +102,8 @@ export default function IncidentsPage() {
                 page: String(page),
                 pageSize: String(PAGE_SIZE),
             });
-            if (filterWebsiteId != null)
-                qs.set("websiteId", String(filterWebsiteId));
+            if (filterMonitorPathId != null)
+                qs.set("monitorPathId", String(filterMonitorPathId));
             if (kind && kind !== "all") qs.set("kind", kind);
 
             const data = await fetchCall({
@@ -107,11 +116,11 @@ export default function IncidentsPage() {
         } finally {
             setLoading(false);
         }
-    }, [userId, page, filterWebsiteId, kind]);
+    }, [userId, page, filterMonitorPathId, kind]);
 
     useEffect(() => {
-        loadWebsites();
-    }, [loadWebsites]);
+        loadPathOptions();
+    }, [loadPathOptions]);
 
     useEffect(() => {
         loadIncidents();
@@ -126,17 +135,17 @@ export default function IncidentsPage() {
         []
     );
 
-    const websiteOptions = useMemo(() => {
-        const opts = [{ key: "all", value: "", text: "Alle websites" }];
-        for (const w of websites) {
+    const pathFilterOptions = useMemo(() => {
+        const opts = [{ key: "all", value: "", text: "Alle stier" }];
+        for (const p of pathOptions) {
             opts.push({
-                key: String(w.id),
-                value: w.id,
-                text: w.url ?? `Website #${w.id}`,
+                key: String(p.monitorPathId),
+                value: p.monitorPathId,
+                text: p.label,
             });
         }
         return opts;
-    }, [websites]);
+    }, [pathOptions]);
 
     const items = payload?.items ?? [];
     const totalCount = payload?.totalCount ?? 0;
@@ -172,15 +181,15 @@ export default function IncidentsPage() {
                             />
                         </div>
                         <div>
-                            <span className="incidents-filter-label">Website</span>
+                            <span className="incidents-filter-label">Sti</span>
                             <Dropdown
                                 selection
-                                placeholder="Alle websites"
-                                options={websiteOptions}
-                                value={filterWebsiteId ?? ""}
+                                placeholder="Alle stier"
+                                options={pathFilterOptions}
+                                value={filterMonitorPathId ?? ""}
                                 onChange={(_, { value }) => {
                                     setPage(1);
-                                    setFilterWebsiteId(value === "" ? null : Number(value));
+                                    setFilterMonitorPathId(value === "" ? null : Number(value));
                                 }}
                                 style={{ minWidth: "16rem" }}
                             />
@@ -207,7 +216,7 @@ export default function IncidentsPage() {
                                 <Table.Header>
                                     <Table.Row>
                                         <Table.HeaderCell>Tidspunkt</Table.HeaderCell>
-                                        <Table.HeaderCell>Website</Table.HeaderCell>
+                                        <Table.HeaderCell>Sti / domæne</Table.HeaderCell>
                                         <Table.HeaderCell>Hændelse</Table.HeaderCell>
                                         <Table.HeaderCell>Samlet nedetid</Table.HeaderCell>
                                         <Table.HeaderCell>Målt status</Table.HeaderCell>

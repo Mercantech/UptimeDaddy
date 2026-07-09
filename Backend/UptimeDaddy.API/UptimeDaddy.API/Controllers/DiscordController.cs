@@ -35,17 +35,13 @@ namespace UptimeDaddy.API.Controllers
         public async Task<IActionResult> GetIntegration()
         {
             if (!TryGetUserId(out var userId))
-            {
                 return Unauthorized("Kunne ikke finde bruger-id i token.");
-            }
 
             var row = await _db.DiscordIntegrations.AsNoTracking()
                 .FirstOrDefaultAsync(i => i.UserId == userId);
 
             if (row == null)
-            {
                 return NotFound();
-            }
 
             return Ok(new
             {
@@ -63,15 +59,11 @@ namespace UptimeDaddy.API.Controllers
         public async Task<IActionResult> UpsertIntegration([FromBody] UpsertDiscordIntegrationDto dto)
         {
             if (!TryGetUserId(out var userId))
-            {
                 return Unauthorized("Kunne ikke finde bruger-id i token.");
-            }
 
             var exists = await _db.Users.AnyAsync(u => u.Id == userId);
             if (!exists)
-            {
                 return BadRequest("Account findes ikke.");
-            }
 
             var entity = await _db.DiscordIntegrations.FirstOrDefaultAsync(i => i.UserId == userId);
             var now = DateTime.UtcNow;
@@ -111,29 +103,26 @@ namespace UptimeDaddy.API.Controllers
             });
         }
 
-        [HttpGet("websites/{websiteId:long}/notifications")]
-        public async Task<IActionResult> GetWebsiteNotifications(long websiteId)
+        [HttpGet("paths/{monitorPathId:long}/notifications")]
+        public async Task<IActionResult> GetPathNotifications(long monitorPathId)
         {
             if (!TryGetUserId(out var userId))
-            {
                 return Unauthorized("Kunne ikke finde bruger-id i token.");
-            }
 
-            var websiteExists = await _db.Websites.AsNoTracking()
-                .AnyAsync(w => w.Id == websiteId && w.UserId == userId);
-            if (!websiteExists)
-            {
-                return NotFound("Website blev ikke fundet.");
-            }
+            var pathExists = await _db.MonitorPaths.AsNoTracking()
+                .Include(p => p.Monitor)
+                .AnyAsync(p => p.Id == monitorPathId && p.Monitor.UserId == userId);
+            if (!pathExists)
+                return NotFound("Monitor-sti blev ikke fundet.");
 
             var sub = await _db.DiscordMonitorSubscriptions.AsNoTracking()
-                .FirstOrDefaultAsync(s => s.WebsiteId == websiteId);
+                .FirstOrDefaultAsync(s => s.MonitorPathId == monitorPathId);
 
             if (sub == null)
             {
                 return Ok(new
                 {
-                    websiteId,
+                    monitorPathId,
                     notificationEnabled = false,
                     channelIdOverride = (string?)null
                 });
@@ -141,34 +130,32 @@ namespace UptimeDaddy.API.Controllers
 
             return Ok(new
             {
-                websiteId = sub.WebsiteId,
+                monitorPathId = sub.MonitorPathId,
                 notificationEnabled = sub.NotificationEnabled,
                 channelIdOverride = sub.ChannelIdOverride
             });
         }
 
-        [HttpPut("websites/{websiteId:long}/notifications")]
-        public async Task<IActionResult> UpsertWebsiteNotifications(
-            long websiteId,
+        [HttpPut("paths/{monitorPathId:long}/notifications")]
+        public async Task<IActionResult> UpsertPathNotifications(
+            long monitorPathId,
             [FromBody] UpsertDiscordMonitorSubscriptionDto dto)
         {
             if (!TryGetUserId(out var userId))
-            {
                 return Unauthorized("Kunne ikke finde bruger-id i token.");
-            }
 
-            var website = await _db.Websites.FirstOrDefaultAsync(w => w.Id == websiteId && w.UserId == userId);
-            if (website == null)
-            {
-                return NotFound("Website blev ikke fundet.");
-            }
+            var path = await _db.MonitorPaths
+                .Include(p => p.Monitor)
+                .FirstOrDefaultAsync(p => p.Id == monitorPathId && p.Monitor.UserId == userId);
+            if (path == null)
+                return NotFound("Monitor-sti blev ikke fundet.");
 
-            var sub = await _db.DiscordMonitorSubscriptions.FirstOrDefaultAsync(s => s.WebsiteId == websiteId);
+            var sub = await _db.DiscordMonitorSubscriptions.FirstOrDefaultAsync(s => s.MonitorPathId == monitorPathId);
             if (sub == null)
             {
                 sub = new DiscordMonitorSubscription
                 {
-                    WebsiteId = websiteId,
+                    MonitorPathId = monitorPathId,
                     NotificationEnabled = dto.NotificationEnabled,
                     ChannelIdOverride = string.IsNullOrWhiteSpace(dto.ChannelIdOverride)
                         ? null
@@ -189,7 +176,7 @@ namespace UptimeDaddy.API.Controllers
             return Ok(new
             {
                 sub.Id,
-                sub.WebsiteId,
+                sub.MonitorPathId,
                 sub.NotificationEnabled,
                 sub.ChannelIdOverride
             });
@@ -199,9 +186,7 @@ namespace UptimeDaddy.API.Controllers
         public async Task<IActionResult> ListReportSchedules()
         {
             if (!TryGetUserId(out var userId))
-            {
                 return Unauthorized("Kunne ikke finde bruger-id i token.");
-            }
 
             var rows = await _db.DiscordReportSchedules.AsNoTracking()
                 .Where(s => s.UserId == userId)
@@ -226,15 +211,11 @@ namespace UptimeDaddy.API.Controllers
         public async Task<IActionResult> CreateReportSchedule([FromBody] CreateDiscordReportScheduleDto dto)
         {
             if (!TryGetUserId(out var userId))
-            {
                 return Unauthorized("Kunne ikke finde bruger-id i token.");
-            }
 
             var exists = await _db.Users.AnyAsync(u => u.Id == userId);
             if (!exists)
-            {
                 return BadRequest("Account findes ikke.");
-            }
 
             var entity = new DiscordReportSchedule
             {
@@ -266,15 +247,11 @@ namespace UptimeDaddy.API.Controllers
         public async Task<IActionResult> UpdateReportSchedule(long id, [FromBody] UpdateDiscordReportScheduleDto dto)
         {
             if (!TryGetUserId(out var userId))
-            {
                 return Unauthorized("Kunne ikke finde bruger-id i token.");
-            }
 
             var entity = await _db.DiscordReportSchedules.FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
             if (entity == null)
-            {
                 return NotFound();
-            }
 
             entity.ChannelId = string.IsNullOrWhiteSpace(dto.ChannelId) ? null : dto.ChannelId.Trim();
             entity.CronExpression = dto.CronExpression.Trim();
@@ -300,15 +277,11 @@ namespace UptimeDaddy.API.Controllers
         public async Task<IActionResult> DeleteReportSchedule(long id)
         {
             if (!TryGetUserId(out var userId))
-            {
                 return Unauthorized("Kunne ikke finde bruger-id i token.");
-            }
 
             var entity = await _db.DiscordReportSchedules.FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
             if (entity == null)
-            {
                 return NotFound();
-            }
 
             _db.DiscordReportSchedules.Remove(entity);
             await _db.SaveChangesAsync();
@@ -320,21 +293,17 @@ namespace UptimeDaddy.API.Controllers
         public async Task<IActionResult> TriggerReport([FromBody] TriggerDiscordReportDto dto)
         {
             if (!TryGetUserId(out var userId))
-            {
                 return Unauthorized("Kunne ikke finde bruger-id i token.");
-            }
 
-            if (dto.WebsiteIds is { Count: > 0 })
+            if (dto.MonitorIds is { Count: > 0 })
             {
-                var allowed = await _db.Websites
-                    .Where(w => w.UserId == userId && dto.WebsiteIds.Contains(w.Id))
-                    .Select(w => w.Id)
+                var allowed = await _db.Monitors
+                    .Where(m => m.UserId == userId && dto.MonitorIds.Contains(m.Id))
+                    .Select(m => m.Id)
                     .ToListAsync();
 
-                if (allowed.Count != dto.WebsiteIds.Count)
-                {
-                    return BadRequest("Et eller flere websiteIds tilhører ikke dig.");
-                }
+                if (allowed.Count != dto.MonitorIds.Count)
+                    return BadRequest("Et eller flere monitorIds tilhører ikke dig.");
             }
 
             var evt = new DiscordReportRequestEventDto
@@ -342,7 +311,7 @@ namespace UptimeDaddy.API.Controllers
                 IdempotencyKey = Guid.NewGuid().ToString("N"),
                 WorkspaceId = userId,
                 ReportType = string.IsNullOrWhiteSpace(dto.ReportType) ? "summary" : dto.ReportType.Trim(),
-                WebsiteIds = dto.WebsiteIds,
+                MonitorIds = dto.MonitorIds,
                 RequestedAt = DateTime.UtcNow
             };
 

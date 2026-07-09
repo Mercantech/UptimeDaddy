@@ -37,15 +37,15 @@ func querySummaryReportRows(
 	ctx context.Context,
 	pool *pgxpool.Pool,
 	userID int64,
-	websiteIDs []int64,
+	monitorIDs []int64,
 	window time.Duration,
 ) ([]reportSiteRow, error) {
 	from := time.Now().UTC().Add(-window)
 	var rows pgx.Rows
 	var err error
-	if len(websiteIDs) == 0 {
+	if len(monitorIDs) == 0 {
 		const q = `
-SELECT w.id, w.url,
+SELECT mon.id, mon.base_url,
   COUNT(m.id)::bigint AS checks,
   COALESCE(SUM(CASE WHEN m.status_code >= 200 AND m.status_code < 300 THEN 1 ELSE 0 END), 0)::bigint AS up_checks,
   AVG(m.total_time_ms) FILTER (WHERE m.id IS NOT NULL) AS avg_total_ms,
@@ -56,25 +56,27 @@ SELECT w.id, w.url,
   lm.time_to_first_byte_ms,
   lm.total_time_ms,
   lm.created_at
-FROM websites w
-LEFT JOIN measurements m ON m.website_id = w.id AND m.created_at >= $1
+FROM monitors mon
+JOIN monitor_paths mp ON mp.monitor_id = mon.id
+LEFT JOIN measurements m ON m.monitor_path_id = mp.id AND m.created_at >= $1
 LEFT JOIN LATERAL (
   SELECT m2.status_code, m2.dns_lookup_ms, m2.connect_ms, m2.tls_handshake_ms,
          m2.time_to_first_byte_ms, m2.total_time_ms, m2.created_at
-  FROM measurements m2
-  WHERE m2.website_id = w.id AND m2.created_at >= $1
+  FROM monitor_paths mp2
+  JOIN measurements m2 ON m2.monitor_path_id = mp2.id AND m2.created_at >= $1
+  WHERE mp2.monitor_id = mon.id
   ORDER BY m2.created_at DESC
   LIMIT 1
 ) lm ON TRUE
-WHERE w.user_id = $2
-GROUP BY w.id, w.url,
+WHERE mon.user_id = $2
+GROUP BY mon.id, mon.base_url,
   lm.status_code, lm.dns_lookup_ms, lm.connect_ms, lm.tls_handshake_ms,
   lm.time_to_first_byte_ms, lm.total_time_ms, lm.created_at
-ORDER BY w.id`
+ORDER BY mon.id`
 		rows, err = pool.Query(ctx, q, from, userID)
 	} else {
 		const q = `
-SELECT w.id, w.url,
+SELECT mon.id, mon.base_url,
   COUNT(m.id)::bigint AS checks,
   COALESCE(SUM(CASE WHEN m.status_code >= 200 AND m.status_code < 300 THEN 1 ELSE 0 END), 0)::bigint AS up_checks,
   AVG(m.total_time_ms) FILTER (WHERE m.id IS NOT NULL) AS avg_total_ms,
@@ -85,22 +87,24 @@ SELECT w.id, w.url,
   lm.time_to_first_byte_ms,
   lm.total_time_ms,
   lm.created_at
-FROM websites w
-LEFT JOIN measurements m ON m.website_id = w.id AND m.created_at >= $1
+FROM monitors mon
+JOIN monitor_paths mp ON mp.monitor_id = mon.id
+LEFT JOIN measurements m ON m.monitor_path_id = mp.id AND m.created_at >= $1
 LEFT JOIN LATERAL (
   SELECT m2.status_code, m2.dns_lookup_ms, m2.connect_ms, m2.tls_handshake_ms,
          m2.time_to_first_byte_ms, m2.total_time_ms, m2.created_at
-  FROM measurements m2
-  WHERE m2.website_id = w.id AND m2.created_at >= $1
+  FROM monitor_paths mp2
+  JOIN measurements m2 ON m2.monitor_path_id = mp2.id AND m2.created_at >= $1
+  WHERE mp2.monitor_id = mon.id
   ORDER BY m2.created_at DESC
   LIMIT 1
 ) lm ON TRUE
-WHERE w.user_id = $2 AND w.id = ANY($3::bigint[])
-GROUP BY w.id, w.url,
+WHERE mon.user_id = $2 AND mon.id = ANY($3::bigint[])
+GROUP BY mon.id, mon.base_url,
   lm.status_code, lm.dns_lookup_ms, lm.connect_ms, lm.tls_handshake_ms,
   lm.time_to_first_byte_ms, lm.total_time_ms, lm.created_at
-ORDER BY w.id`
-		rows, err = pool.Query(ctx, q, from, userID, websiteIDs)
+ORDER BY mon.id`
+		rows, err = pool.Query(ctx, q, from, userID, monitorIDs)
 	}
 	if err != nil {
 		return nil, err

@@ -4,8 +4,8 @@ namespace UptimeDaddy.API.DTOs
 {
     public class MqttFaviconUpdateDto
     {
-        [JsonPropertyName("id")]
-        public long Id { get; set; }
+        [JsonPropertyName("monitor_id")]
+        public long MonitorId { get; set; }
 
         [JsonPropertyName("path")]
         public string Path { get; set; } = string.Empty;

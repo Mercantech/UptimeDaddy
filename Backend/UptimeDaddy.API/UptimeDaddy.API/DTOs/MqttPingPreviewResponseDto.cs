@@ -30,5 +30,8 @@ namespace UptimeDaddy.API.DTOs
 
         [JsonPropertyName("total_time")]
         public double TotalTime { get; set; }
+
+        [JsonPropertyName("keyword_matched")]
+        public bool? KeywordMatched { get; set; }
     }
 }

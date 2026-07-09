@@ -252,7 +252,11 @@ func mqttMessageHandler(pool *pgxpool.Pool, dg *discordgo.Session, st *stats, id
 }
 
 func handleMonitorStatus(ctx context.Context, pool *pgxpool.Pool, dg *discordgo.Session, ev monitorStatusNotificationEvent) error {
-	ch, err := resolveChannelForWebsite(ctx, pool, ev.WebsiteID)
+	pathID := ev.MonitorPathID
+	if pathID == 0 {
+		pathID = ev.WebsiteID
+	}
+	ch, err := resolveChannelForWebsite(ctx, pool, pathID)
 	if err != nil {
 		return err
 	}
@@ -267,11 +271,11 @@ func handleMonitorStatus(ctx context.Context, pool *pgxpool.Pool, dg *discordgo.
 		urlLead = fv + " **URL:**"
 	}
 	body := fmt.Sprintf(
-		"%s\n%s %s\n**Website id:** %d\n**Status:** %s → %s (HTTP %d)\n**Responstid:** %.0f ms\n",
+		"%s\n%s %s\n**Sti-id:** %d\n**Status:** %s → %s (HTTP %d)\n**Responstid:** %.0f ms\n",
 		BrandLine(title),
 		urlLead,
 		ev.WebsiteURL,
-		ev.WebsiteID,
+		pathID,
 		ev.PrevStatus,
 		ev.Status,
 		ev.StatusCode,
@@ -340,7 +344,11 @@ func handleReportRequest(ctx context.Context, pool *pgxpool.Pool, dg *discordgo.
 	}
 
 	title := BrandLine(fmt.Sprintf("Manuel rapport · `%s`", ev.ReportType))
-	embeds, err := buildSummaryReportEmbeds(ctx, pool, ev.WorkspaceID, ev.WebsiteIDs, 24*time.Hour, title)
+	ids := ev.MonitorIDs
+	if len(ids) == 0 {
+		ids = ev.WebsiteIDs
+	}
+	embeds, err := buildSummaryReportEmbeds(ctx, pool, ev.WorkspaceID, ids, 24*time.Hour, title)
 	if err != nil {
 		return err
 	}

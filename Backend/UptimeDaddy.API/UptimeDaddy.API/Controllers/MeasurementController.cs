@@ -23,13 +23,11 @@ namespace UptimeDaddy.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Models.Measurement measurement)
         {
-            var exists = await _context.Websites
-                .AnyAsync(w => w.Id == measurement.WebsiteId);
+            var exists = await _context.MonitorPaths
+                .AnyAsync(p => p.Id == measurement.MonitorPathId);
 
             if (!exists)
-            {
-                return BadRequest("Website findes ikke (måske slettet)");
-            }
+                return BadRequest("Monitor-sti findes ikke (måske slettet)");
 
             _context.Measurements.Add(measurement);
             await _context.SaveChangesAsync();
@@ -50,25 +48,26 @@ namespace UptimeDaddy.API.Controllers
                 .Select(m => new
                 {
                     id = m.Id,
-                    websiteId = m.WebsiteId,
+                    monitorPathId = m.MonitorPathId,
                     statusCode = m.StatusCode,
                     dnsLookupMs = m.DnsLookupMs,
                     connectMs = m.ConnectMs,
                     tlsHandshakeMs = m.TlsHandshakeMs,
                     timeToFirstByteMs = m.TimeToFirstByteMs,
                     totalTimeMs = m.TotalTimeMs,
-                    createdAt = m.CreatedAt
+                    createdAt = m.CreatedAt,
+                    keywordMatched = m.KeywordMatched
                 })
                 .ToListAsync();
 
             return Ok(measurements);
         }
 
-        [HttpGet("website/{websiteId:long}")]
-        public async Task<IActionResult> GetByWebsite(long websiteId, [FromQuery] int? hours)
+        [HttpGet("path/{monitorPathId:long}")]
+        public async Task<IActionResult> GetByPath(long monitorPathId, [FromQuery] int? hours)
         {
             var query = _context.Measurements
-                .Where(m => m.WebsiteId == websiteId);
+                .Where(m => m.MonitorPathId == monitorPathId);
 
             if (hours.HasValue)
             {
@@ -86,22 +85,23 @@ namespace UptimeDaddy.API.Controllers
                     connectMs = m.ConnectMs,
                     tlsHandshakeMs = m.TlsHandshakeMs,
                     timeToFirstByteMs = m.TimeToFirstByteMs,
-                    totalTimeMs = m.TotalTimeMs
+                    totalTimeMs = m.TotalTimeMs,
+                    keywordMatched = m.KeywordMatched
                 })
                 .ToListAsync();
 
             return Ok(measurements);
         }
 
-        [HttpGet("website/{websiteId:long}/latest")]
-        public async Task<IActionResult> GetLatestByWebsite(long websiteId)
+        [HttpGet("path/{monitorPathId:long}/latest")]
+        public async Task<IActionResult> GetLatestByPath(long monitorPathId)
         {
             var latestMeasurement = await _context.Measurements
-                .Where(m => m.WebsiteId == websiteId)
+                .Where(m => m.MonitorPathId == monitorPathId)
                 .OrderByDescending(m => m.CreatedAt)
                 .Select(m => new
                 {
-                    websiteId = m.WebsiteId,
+                    monitorPathId = m.MonitorPathId,
                     statusCode = m.StatusCode,
                     totalTimeMs = m.TotalTimeMs,
                     createdAt = m.CreatedAt
@@ -109,9 +109,7 @@ namespace UptimeDaddy.API.Controllers
                 .FirstOrDefaultAsync();
 
             if (latestMeasurement == null)
-            {
-                return NotFound("Ingen målinger fundet for dette website.");
-            }
+                return NotFound("Ingen målinger fundet for denne sti.");
 
             return Ok(latestMeasurement);
         }

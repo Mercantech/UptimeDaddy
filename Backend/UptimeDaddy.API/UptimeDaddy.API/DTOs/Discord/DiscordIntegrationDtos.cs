@@ -50,6 +50,6 @@ namespace UptimeDaddy.API.DTOs.Discord
     {
         public string ReportType { get; set; } = "summary";
 
-        public List<long>? WebsiteIds { get; set; }
+        public List<long>? MonitorIds { get; set; }
     }
 }

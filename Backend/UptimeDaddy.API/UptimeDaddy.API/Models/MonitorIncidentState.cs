@@ -5,8 +5,8 @@ namespace UptimeDaddy.API.Models
     [Table("monitor_incident_states")]
     public class MonitorIncidentState
     {
-        [Column("website_id")]
-        public long WebsiteId { get; set; }
+        [Column("monitor_path_id")]
+        public long MonitorPathId { get; set; }
 
         [Column("last_is_up")]
         public bool LastIsUp { get; set; }
@@ -23,6 +23,6 @@ namespace UptimeDaddy.API.Models
         [Column("initialized")]
         public bool Initialized { get; set; }
 
-        public Website Website { get; set; } = null!;
+        public MonitorPath MonitorPath { get; set; } = null!;
     }
 }

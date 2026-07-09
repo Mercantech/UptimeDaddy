@@ -8,8 +8,8 @@ namespace UptimeDaddy.API.Models
         [Column("id")]
         public long Id { get; set; }
 
-        [Column("website_id")]
-        public long WebsiteId { get; set; }
+        [Column("monitor_path_id")]
+        public long MonitorPathId { get; set; }
 
         [Column("status_code")]
         public int StatusCode { get; set; }
@@ -32,6 +32,9 @@ namespace UptimeDaddy.API.Models
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public Website? Website { get; set; }
+        [Column("keyword_matched")]
+        public bool? KeywordMatched { get; set; }
+
+        public MonitorPath MonitorPath { get; set; } = null!;
     }
 }

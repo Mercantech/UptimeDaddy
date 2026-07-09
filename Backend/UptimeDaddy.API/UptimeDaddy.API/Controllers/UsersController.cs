@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UptimeDaddy.API.Data;
+using UptimeDaddy.API.Services;
 
 namespace UptimeDaddy.API.Controllers
 {
@@ -21,15 +22,17 @@ namespace UptimeDaddy.API.Controllers
         public async Task<IActionResult> GetUsers()
         {
             var users = await _context.Users
-                .Include(u => u.Websites)
+                .Include(u => u.Monitors)
+                .ThenInclude(m => m.Paths)
                 .Select(u => new
                 {
                     name = u.Fullname,
                     email = u.Email,
-                    pages = u.Websites.Select(w => new
+                    monitors = u.Monitors.Select(m => new
                     {
-                        path = w.Url,
-                        interval_time = w.IntervalTime
+                        baseUrl = m.BaseUrl,
+                        interval_time = m.IntervalTime,
+                        paths = m.Paths.Select(p => p.Path).ToList()
                     }).ToList()
                 })
                 .ToListAsync();

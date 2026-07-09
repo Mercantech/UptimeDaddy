@@ -8,6 +8,8 @@ type monitorStatusNotificationEvent struct {
 	IdempotencyKey       string   `json:"idempotencyKey"`
 	WorkspaceID          int64    `json:"workspaceId"`
 	WebsiteID            int64    `json:"websiteId"`
+	MonitorPathID        int64    `json:"monitorPathId"`
+	MonitorID            int64    `json:"monitorId"`
 	WebsiteURL           string   `json:"websiteUrl"`
 	PrevStatus           string   `json:"prevStatus"`
 	Status               string   `json:"status"`
@@ -25,5 +27,6 @@ type discordReportRequestEvent struct {
 	ReportType     string  `json:"reportType"`
 	ScheduleID     *int64  `json:"scheduleId"`
 	WebsiteIDs     []int64 `json:"websiteIds"`
+	MonitorIDs     []int64 `json:"monitorIds"`
 	RequestedAt    string  `json:"requestedAt"`
 }

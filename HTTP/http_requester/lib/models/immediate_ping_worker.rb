@@ -7,7 +7,7 @@ class ImmediatePingWorker
     @queue = Queue.new
     @publish_result = publish_result
   end
-  
+
   def start!
     Thread.new do
       loop do
@@ -24,8 +24,21 @@ class ImmediatePingWorker
     Thread.new do
       begin
         logger.info("Performing quick ping for page: #{page.path}")
-        response = CurlService.get_hashed_response(page.path, logger)
-        publish_result.call(topic, {"type": type, "requestId": page.request_id, "path": page.path}.merge(response).to_json)
+        response = CurlService.get_hashed_response(
+          page.path,
+          logger,
+          keyword: page.keyword,
+          keyword_must_contain: page.keyword_must_contain
+        )
+        publish_result.call(
+          topic,
+          {
+            type: type,
+            requestId: page.request_id,
+            path: page.path,
+            keywordMatched: response["keyword_matched"]
+          }.merge(response).to_json
+        )
       rescue => e
         logger.error("Error performing quick ping for #{page.path}: #{e.class} \n #{e.backtrace.join("\n")}")
       end
@@ -43,10 +56,26 @@ class ImmediatePingWorker
     page = queue.pop
     path = page.path.start_with?("https") ? page.path : "https://#{page.path}"
     logger.info("Processing immediate ping for page: #{page.path}")
-    curl_response = CurlService.get_hashed_response(path, logger)
-    page_hash = { id: page.id, path: page.path, user_id: page.user_id }
+    curl_response = CurlService.get_hashed_response(
+      path,
+      logger,
+      keyword: page.keyword,
+      keyword_must_contain: page.keyword_must_contain
+    )
+    page_hash = { id: page.id, path: page.path, user_id: page.user_id, monitor_id: page.monitor_id }
     publish_result.call("uptime/measurements", { pages: [page_hash.merge(response: curl_response)] }.to_json)
-    favicon_response = FaradayService.get_favicon(path)
-    publish_result.call("uptime/update_favicon", page_hash.merge(favicon: Base64.strict_encode64(favicon_response.body)).to_json)
+
+    if page.monitor_id
+      favicon_response = FaradayService.get_favicon(path)
+      publish_result.call(
+        "uptime/update_favicon",
+        {
+          monitor_id: page.monitor_id,
+          path: page.path,
+          user_id: page.user_id,
+          favicon: Base64.strict_encode64(favicon_response.body)
+        }.to_json
+      )
+    end
   end
 end
