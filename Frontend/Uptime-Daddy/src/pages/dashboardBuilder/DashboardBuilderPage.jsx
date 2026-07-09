@@ -564,6 +564,7 @@ function DashboardBuilderPage() {
               <Modal.Content>
                 <p className="dashboard-builder-embed-hint">
                   Indlej status-siden på din hjemmeside, wiki eller intranet. Forhåndsvisningen opdateres live.
+                  Når du deler linket i Discord, Slack eller iMessage, vises et flot forhåndsvisningskort med board-navn og status.
                 </p>
                 <div className="dashboard-builder-embed-preview">
                   <div className="dashboard-builder-embed-preview__chrome">

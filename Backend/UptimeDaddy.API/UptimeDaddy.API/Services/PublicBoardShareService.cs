@@ -8,7 +8,7 @@ namespace UptimeDaddy.API.Services
 {
     public sealed record BoardSharePreview(
         string BoardName,
-        string PublicId,
+        string DisplayName,
         bool OverallUp,
         string OverallLabel,
         int ComponentCount);
@@ -80,7 +80,7 @@ namespace UptimeDaddy.API.Services
             string pageUrl,
             string imageUrl)
         {
-            var title = $"{preview.PublicId} — {preview.OverallLabel}";
+            var title = $"{preview.DisplayName} — {preview.OverallLabel}";
             var description =
                 $"{preview.ComponentCount} komponent{(preview.ComponentCount == 1 ? "" : "er")} overvåget · Live status via UptimeDaddy";
 
@@ -88,7 +88,7 @@ namespace UptimeDaddy.API.Services
             var encodedDescription = WebUtility.HtmlEncode(description);
             var encodedPageUrl = WebUtility.HtmlEncode(pageUrl);
             var encodedImageUrl = WebUtility.HtmlEncode(imageUrl);
-            var encodedBoard = WebUtility.HtmlEncode(preview.PublicId);
+            var encodedBoard = WebUtility.HtmlEncode(preview.DisplayName);
 
             return $"""
                 <!DOCTYPE html>
@@ -112,7 +112,6 @@ namespace UptimeDaddy.API.Services
                   <meta name="twitter:description" content="{encodedDescription}" />
                   <meta name="twitter:image" content="{encodedImageUrl}" />
                   <link rel="canonical" href="{encodedPageUrl}" />
-                  <meta http-equiv="refresh" content="0;url={encodedPageUrl}" />
                 </head>
                 <body style="margin:0;background:#091413;color:#b0e4cc;font-family:system-ui,sans-serif;">
                   <p style="padding:2rem;">Status for <strong>{encodedBoard}</strong> — <a href="{encodedPageUrl}" style="color:#4ea584;">Åbn status page</a></p>
@@ -123,7 +122,7 @@ namespace UptimeDaddy.API.Services
 
         public static string BuildOgImageSvg(BoardSharePreview preview)
         {
-            var boardName = EscapeSvg(preview.PublicId);
+            var boardName = EscapeSvg(preview.DisplayName);
             var statusLabel = EscapeSvg(preview.OverallLabel);
             var componentLabel = EscapeSvg($"{preview.ComponentCount} komponenter");
             var statusColor = preview.OverallUp ? "#4ea584" : "#d4a054";

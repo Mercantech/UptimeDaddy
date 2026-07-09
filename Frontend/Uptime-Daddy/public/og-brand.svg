@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="UptimeDaddy">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#091413"/>
+      <stop offset="100%" stop-color="#0f1f1c"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1f8b68"/>
+      <stop offset="100%" stop-color="#408a71"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="28" y="28" width="1144" height="574" rx="28" fill="none" stroke="#2f6d59" stroke-width="2"/>
+  <text x="88" y="220" fill="#e8fff6" font-family="Segoe UI, system-ui, sans-serif" font-size="92" font-weight="700">UptimeDaddy</text>
+  <text x="88" y="290" fill="#8aa89c" font-family="Segoe UI, system-ui, sans-serif" font-size="34">Live uptime monitoring</text>
+  <text x="88" y="360" fill="#9bcbb8" font-family="Segoe UI, system-ui, sans-serif" font-size="28">Del flotte status-sider med dit team</text>
+  <rect x="88" y="420" width="1024" height="12" rx="6" fill="#132821"/>
+  <rect x="930" y="88" width="182" height="182" rx="36" fill="url(#accent)" opacity="0.18"/>
+  <path d="M1002 138 L1048 184 L1002 230 L956 184 Z" fill="none" stroke="#4ea584" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="1002" cy="184" r="22" fill="#4ea584"/>
+</svg>

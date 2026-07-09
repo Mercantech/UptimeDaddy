@@ -123,7 +123,7 @@ namespace UptimeDaddy.API.Controllers
             if (preview == null)
                 return NotFound();
 
-            var pageUrl = BuildBoardPageUrl(preview.PublicId);
+            var pageUrl = BuildBoardPageUrl(preview.DisplayName);
             var imageUrl = BuildOgImageUrl(publicId);
             var html = PublicBoardShareService.BuildSocialHtml(preview, pageUrl, imageUrl);
             return Content(html, "text/html; charset=utf-8");
@@ -156,12 +156,7 @@ namespace UptimeDaddy.API.Controllers
         {
             var apiBase = _configuration["Site:ApiPublicBaseUrl"]?.TrimEnd('/');
             if (string.IsNullOrWhiteSpace(apiBase))
-            {
-                var requestBase = $"{Request.Scheme}://{Request.Host}";
-                apiBase = requestBase.EndsWith("/api", StringComparison.OrdinalIgnoreCase)
-                    ? requestBase
-                    : $"{requestBase}/api";
-            }
+                apiBase = $"{Request.Scheme}://{Request.Host}/api";
 
             return $"{apiBase}/public/boards/{Uri.EscapeDataString(publicId)}/og-image.svg";
         }
