@@ -253,7 +253,7 @@ function DashboardBuilderPage() {
               inverted
               style={{ backgroundColor: "#0f1f1c", border: "1px solid #2f6d59" }}
             >
-              <Form inverted>
+              <Form inverted className="dashboard-builder-form">
                 <div
                   style={{
                     marginBottom: "1.35rem",

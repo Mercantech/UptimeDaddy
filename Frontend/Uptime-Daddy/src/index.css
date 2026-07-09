@@ -67,6 +67,32 @@ body {
   box-shadow: 0 0 0 1px #4ea584 inset !important;
 }
 
+/* Dashboard-builder: toggle/checkbox-labels skal forblive lyse når aktiveret */
+.dashboard-builder-form.ui.inverted.form .ui.checkbox label,
+.dashboard-builder-form.ui.inverted.form .ui.toggle.checkbox label,
+.dashboard-builder-form.ui.inverted.form .ui.checkbox input:checked ~ label,
+.dashboard-builder-form.ui.inverted.form .ui.toggle.checkbox input:checked ~ label,
+.dashboard-builder-form.ui.inverted.form .ui.checkbox input:focus ~ label,
+.dashboard-builder-form.ui.inverted.form .ui.toggle.checkbox input:focus ~ label {
+  color: #b0e4cc !important;
+  -webkit-text-fill-color: #b0e4cc !important;
+}
+
+.dashboard-builder-form.ui.inverted.form .ui.toggle.checkbox input:checked ~ label:before {
+  background-color: #408a71 !important;
+  border-color: #4ea584 !important;
+}
+
+.dashboard-builder-form.ui.inverted.form .ui.toggle.checkbox input ~ label:before {
+  background-color: #1a302b !important;
+  border-color: #2f6d59 !important;
+}
+
+.dashboard-builder-form.ui.inverted.form .ui.checkbox input:checked ~ label:before,
+.dashboard-builder-form.ui.inverted.form .ui.checkbox input:checked ~ label:after {
+  color: #e8fff6 !important;
+}
+
 input, button, textarea, select, header, p {
   font-family: inherit;
 }

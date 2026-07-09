@@ -1,13 +1,27 @@
 import { useState } from "react";
-import { Button, Container, Header, Icon, Input, Modal, List } from "semantic-ui-react";
+import { Button, Header, Icon, Input, Modal, Popup } from "semantic-ui-react";
 import Cards from "../../atoms/cards/cards";
 import Loader from "../../atoms/loader/loader";
 import statusIcon from "../../util/status/statusIcon.jsx";
 import accents from "../../util/status/stautsAccent.jsx";
 import { API_URL, fetchCall } from "../../util/api.jsx";
+import "./searchWebsite.css";
 
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function FieldLabel({ children, hint }) {
+  return (
+    <Popup
+      className="search-website-popup"
+      content={hint}
+      position="top center"
+      hoverable
+      trigger={
+        <span className="search-website-field__label">
+          {children}
+          <Icon name="info circle" />
+        </span>
+      }
+    />
+  );
 }
 
 function SearchWebsite({ onWebsiteAdded }) {
@@ -89,71 +103,102 @@ function SearchWebsite({ onWebsiteAdded }) {
 
   return (
     <>
-      <Container style={{ backgroundColor: "#091413", padding: "1rem", borderRadius: "8px", marginBottom: "2rem" }}>
-        <Header as="h2" style={{ color: "#B0E4CC", margin: "0 0 1rem", fontSize: "2rem" }}>
-          Tilføj domæne-monitor
-        </Header>
-        <p style={{ color: "#408A71", marginBottom: "1rem" }}>
+      <div className="search-website-panel">
+        <Popup
+          className="search-website-popup"
+          content="Opret én monitor per domæne. Tilføj flere stier for at overvåge f.eks. forsiden og et health-endpoint. Domæne-status vises som worst-of på tværs af alle stier."
+          position="right center"
+          hoverable
+          trigger={
+            <Header as="h2" className="search-website-panel__title" style={{ cursor: "help", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+              Tilføj domæne-monitor
+              <Icon name="info circle" style={{ fontSize: "0.55em", color: "#6d9084", margin: 0 }} />
+            </Header>
+          }
+        />
+
+        <p className="search-website-panel__intro">
           Ét domæne med flere stier (f.eks. /health og /db-health). Stats summeres med worst-of.
         </p>
 
-        <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+        <div className="search-website-field">
+          <FieldLabel hint="Rod-domænet uden sti — f.eks. example.com eller api.firma.dk. https:// tilføjes automatisk ved ping.">
+            Domæne
+          </FieldLabel>
           <Input
+            className="search-website-input"
             icon="globe"
             iconPosition="left"
             placeholder="example.com"
             value={baseUrl}
             disabled={isLoading}
             onChange={(e) => setBaseUrl(e.target.value)}
-            style={{ flex: "1 1 220px" }}
+            fluid
           />
         </div>
 
-        <List divided relaxed style={{ marginBottom: "1rem" }}>
-          {paths.map((entry, idx) => (
-            <List.Item key={idx}>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
-                <Input
-                  placeholder="/health"
-                  value={entry.path}
-                  disabled={isLoading}
-                  onChange={(e) => {
-                    const next = [...paths];
-                    next[idx] = { ...next[idx], path: e.target.value };
-                    setPaths(next);
-                  }}
-                  style={{ width: "140px" }}
-                />
-                <Input
-                  placeholder='Keyword (valgfri, fx "OK")'
-                  value={entry.keyword}
-                  disabled={isLoading}
-                  onChange={(e) => {
-                    const next = [...paths];
-                    next[idx] = { ...next[idx], keyword: e.target.value };
-                    setPaths(next);
-                  }}
-                  style={{ flex: "1 1 180px" }}
-                />
-                <Button size="small" onClick={() => handlePreview(entry)} disabled={isLoading || !trimmedBase}>
-                  Preview
-                </Button>
-                {paths.length > 1 && (
-                  <Button
-                    icon
-                    size="small"
-                    negative
-                    onClick={() => setPaths(paths.filter((_, i) => i !== idx))}
-                  >
-                    <Icon name="trash" />
-                  </Button>
-                )}
-              </div>
-            </List.Item>
-          ))}
-        </List>
+        <div className="search-website-paths-header">
+          <div className="search-website-paths-header__path">
+            <FieldLabel hint="Stien på domænet, f.eks. / eller /health. Kombineres med domænet til den fulde URL der pinges.">
+              Sti
+            </FieldLabel>
+          </div>
+          <div className="search-website-paths-header__keyword">
+            <FieldLabel hint='Valgfri tekst der skal findes i HTTP-svaret. Bruges til at sikre at siden svarer med forventet indhold — f.eks. "OK" eller "healthy".'>
+              Keyword
+            </FieldLabel>
+          </div>
+          <div className="search-website-paths-header__spacer" aria-hidden="true" />
+        </div>
 
-        <div style={{ display: "flex", gap: "0.75rem" }}>
+        {paths.map((entry, idx) => (
+          <div className="search-website-path-row" key={idx}>
+            <div className="search-website-path-row__field search-website-path-row__field--path">
+              <Input
+                className="search-website-input"
+                placeholder="/health"
+                value={entry.path}
+                disabled={isLoading}
+                onChange={(e) => {
+                  const next = [...paths];
+                  next[idx] = { ...next[idx], path: e.target.value };
+                  setPaths(next);
+                }}
+              />
+            </div>
+            <div className="search-website-path-row__field">
+              <Input
+                className="search-website-input"
+                placeholder='fx "OK"'
+                value={entry.keyword}
+                disabled={isLoading}
+                onChange={(e) => {
+                  const next = [...paths];
+                  next[idx] = { ...next[idx], keyword: e.target.value };
+                  setPaths(next);
+                }}
+              />
+            </div>
+            <div className="search-website-path-row__actions">
+              <Button size="small" onClick={() => handlePreview(entry)} disabled={isLoading || !trimmedBase}>
+                Preview
+              </Button>
+              {paths.length > 1 ? (
+                <Button
+                  icon
+                  size="small"
+                  negative
+                  onClick={() => setPaths(paths.filter((_, i) => i !== idx))}
+                  aria-label="Fjern sti"
+                >
+                  <Icon name="trash" />
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ))}
+
+        <div className="search-website-actions">
           <Button
             onClick={() => setPaths([...paths, { path: "", keyword: "" }])}
             disabled={isLoading}
@@ -164,7 +209,7 @@ function SearchWebsite({ onWebsiteAdded }) {
             <Icon name="check" /> Gem monitor
           </Button>
         </div>
-      </Container>
+      </div>
 
       <Loader isLoading={isLoading} text="Henter ping data..." />
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} size="large">
