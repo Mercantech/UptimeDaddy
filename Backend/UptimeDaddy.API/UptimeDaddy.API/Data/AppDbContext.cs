@@ -10,7 +10,7 @@ namespace UptimeDaddy.API.Data
         }
 
         public DbSet<User> Users { get; set; }
-        public DbSet<Monitor> Monitors { get; set; }
+        public DbSet<SiteMonitor> Monitors { get; set; }
         public DbSet<MonitorPath> MonitorPaths { get; set; }
         public DbSet<Measurement> Measurements { get; set; }
         public DbSet<DashboardBoard> DashboardBoards { get; set; }
@@ -66,23 +66,23 @@ namespace UptimeDaddy.API.Data
                 .HasIndex(i => new { i.DashboardBoardId, i.SortOrder })
                 .HasDatabaseName("ix_dashboard_board_items_board_sort");
 
-            modelBuilder.Entity<Monitor>()
+            modelBuilder.Entity<SiteMonitor>()
                 .HasMany(m => m.Paths)
                 .WithOne(p => p.Monitor)
                 .HasForeignKey(p => p.MonitorId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Monitor>()
+            modelBuilder.Entity<SiteMonitor>()
                 .HasMany(m => m.DashboardBoardItems)
                 .WithOne(i => i.Monitor)
                 .HasForeignKey(i => i.MonitorId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Monitor>()
+            modelBuilder.Entity<SiteMonitor>()
                 .HasIndex(m => m.UserId)
                 .HasDatabaseName("ix_monitors_user_id");
 
-            modelBuilder.Entity<Monitor>()
+            modelBuilder.Entity<SiteMonitor>()
                 .HasIndex(m => new { m.UserId, m.BaseUrl })
                 .IsUnique()
                 .HasDatabaseName("ix_monitors_user_id_base_url_unique");

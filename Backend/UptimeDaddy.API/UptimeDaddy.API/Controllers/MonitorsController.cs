@@ -75,7 +75,7 @@ namespace UptimeDaddy.API.Controllers
             };
         }
 
-        private object MapMonitor(Monitor m, bool includeMeasurements)
+        private object MapMonitor(SiteMonitor m, bool includeMeasurements)
         {
             var paths = m.Paths.OrderBy(p => p.Path).ToList();
             var rollup = MonitorRollupService.Compute(paths);
@@ -257,7 +257,7 @@ namespace UptimeDaddy.API.Controllers
 
             var intervalTime = dto.IntervalTime > 0 ? dto.IntervalTime : 60;
 
-            var monitor = new Monitor
+            var monitor = new SiteMonitor
             {
                 BaseUrl = baseUrl,
                 IntervalTime = intervalTime,

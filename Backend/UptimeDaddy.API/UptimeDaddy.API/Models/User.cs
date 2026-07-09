@@ -17,7 +17,7 @@ namespace UptimeDaddy.API.Models
         [Column("fullName")]
         public string Fullname { get; set; } = string.Empty;
 
-        public List<Monitor> Monitors { get; set; } = new();
+        public List<SiteMonitor> Monitors { get; set; } = new();
 
         public List<DashboardBoard> DashboardBoards { get; set; } = new();
 

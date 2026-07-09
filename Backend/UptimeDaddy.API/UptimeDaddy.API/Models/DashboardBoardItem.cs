@@ -16,7 +16,7 @@ namespace UptimeDaddy.API.Models
         [Column("monitor_id")]
         public long MonitorId { get; set; }
 
-        public Monitor Monitor { get; set; } = null!;
+        public SiteMonitor Monitor { get; set; } = null!;
 
         [Column("sort_order")]
         public int SortOrder { get; set; }

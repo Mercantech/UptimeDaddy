@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace UptimeDaddy.API.Models
 {
     [Table("monitors")]
-    public class Monitor
+    public class SiteMonitor
     {
         [Column("id")]
         public long Id { get; set; }
