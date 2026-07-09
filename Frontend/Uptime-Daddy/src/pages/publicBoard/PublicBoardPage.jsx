@@ -6,9 +6,22 @@ import UptimeBar from "../../atoms/uptimeBar/UptimeBar.jsx";
 import accents from "../../util/status/stautsAccent.jsx";
 import { formatIntervalSeconds } from "../../util/durationFormat.js";
 import "../../molecules/table/style.css";
-import { monitorFaviconUrl } from "../../util/monitor.js";
+import TimingCell from "../../atoms/timingCell/TimingCell.jsx";
+import { monitorFaviconUrl, pathLatest } from "../../util/monitor.js";
 
 const POLL_MS = Number(import.meta.env.VITE_DASHBOARD_POLL_MS) || 30_000;
+
+function FaviconImage({ src, className }) {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  if (!src || failed) return null;
+
+  return <img src={src} alt="" className={className} onError={() => setFailed(true)} />;
+}
 
 function formatIncident(iso) {
   if (!iso) return "—";
@@ -154,7 +167,7 @@ function PublicBoardPage() {
                           style={{ cursor: "pointer", marginRight: "0.25rem" }}
                         />
                       )}
-                      {faviconSrc ? <img src={faviconSrc} alt="" className="favicon-icon" /> : null}
+                      {faviconSrc ? <FaviconImage src={faviconSrc} className="favicon-icon" /> : null}
                       <span>{label}</span>
                       {row.sslExpiresAt && (
                         <Label size="mini" color="blue" style={{ marginLeft: "0.35rem" }}>SSL</Label>
@@ -173,7 +186,7 @@ function PublicBoardPage() {
                 </Table.Row>
                 {isOpen &&
                   paths.map((p) => {
-                    const m = p.measurements?.[0];
+                    const latest = pathLatest(p);
                     return (
                       <Table.Row key={p.id} className="monitor-table__path-row">
                         <Table.Cell>
@@ -182,14 +195,16 @@ function PublicBoardPage() {
                           </div>
                         </Table.Cell>
                         <Table.Cell className="uptime-bar-cell">
-                          <UptimeBar measurements={p.measurements ?? []} />
+                          <UptimeBar rollupSegments={p.segments} rollupPercent={p.uptimePercent} />
                         </Table.Cell>
-                        <Table.Cell textAlign="center">{(p.measurements?.length ?? 0).toLocaleString("da-DK")}</Table.Cell>
+                        <Table.Cell textAlign="center">
+                          {(p.measurementCount ?? p.measurements?.length ?? 0).toLocaleString("da-DK")}
+                        </Table.Cell>
                         <Table.Cell>—</Table.Cell>
                         <Table.Cell>
-                          <Label color={accents.statusAccent(m?.statusCode)}>{m?.statusCode ?? "-"}</Label>
+                          <Label color={accents.statusAccent(latest?.statusCode)}>{latest?.statusCode ?? "-"}</Label>
                         </Table.Cell>
-                        <Table.Cell><TimingCell latest={m} kind="total" /></Table.Cell>
+                        <Table.Cell><TimingCell latest={latest} kind="total" /></Table.Cell>
                       </Table.Row>
                     );
                   })}

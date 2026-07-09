@@ -30,6 +30,54 @@ namespace UptimeDaddy.API.Services
                 .AsSplitQuery()
                 .ToListAsync(cancellationToken);
 
+            return await MapMonitorsAsync(monitors, cancellationToken);
+        }
+
+        public async Task<List<object>> GetDashboardMonitorsByIdsAsync(
+            IReadOnlyList<long> monitorIds,
+            CancellationToken cancellationToken = default)
+        {
+            if (monitorIds.Count == 0)
+                return new List<object>();
+
+            var monitors = await _context.Monitors
+                .AsNoTracking()
+                .Where(m => monitorIds.Contains(m.Id))
+                .Include(m => m.Paths)
+                .AsSplitQuery()
+                .ToListAsync(cancellationToken);
+
+            var order = monitorIds
+                .Select((id, index) => new { id, index })
+                .ToDictionary(x => x.id, x => x.index);
+
+            monitors.Sort((a, b) => order.GetValueOrDefault(a.Id, int.MaxValue)
+                .CompareTo(order.GetValueOrDefault(b.Id, int.MaxValue)));
+
+            return await MapMonitorsAsync(monitors, cancellationToken);
+        }
+
+        public async Task<IReadOnlyDictionary<long, object>> GetDashboardMonitorsByIdsLookupAsync(
+            IReadOnlyList<long> monitorIds,
+            CancellationToken cancellationToken = default)
+        {
+            var payloads = await GetDashboardMonitorsByIdsAsync(monitorIds, cancellationToken);
+            return payloads.ToDictionary(GetPayloadMonitorId);
+        }
+
+        private static long GetPayloadMonitorId(object payload)
+        {
+            var idProperty = payload.GetType().GetProperty("id");
+            if (idProperty == null)
+                throw new InvalidOperationException("Dashboard payload mangler id.");
+
+            return Convert.ToInt64(idProperty.GetValue(payload));
+        }
+
+        private async Task<List<object>> MapMonitorsAsync(
+            List<SiteMonitor> monitors,
+            CancellationToken cancellationToken)
+        {
             if (monitors.Count == 0)
                 return new List<object>();
 

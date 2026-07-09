@@ -12,10 +12,12 @@ namespace UptimeDaddy.API.Controllers
     public class PublicDashboardsController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly MonitorDashboardService _dashboardService;
 
-        public PublicDashboardsController(AppDbContext context)
+        public PublicDashboardsController(AppDbContext context, MonitorDashboardService dashboardService)
         {
             _context = context;
+            _dashboardService = dashboardService;
         }
 
         private static string NormalizeBoardName(string? raw)
@@ -56,15 +58,7 @@ namespace UptimeDaddy.API.Controllers
 
             var orderedItems = board.Items.OrderBy(i => i.SortOrder).ToList();
             var monitorIds = orderedItems.Select(i => i.MonitorId).ToList();
-
-            var monitors = await _context.Monitors
-                .AsNoTracking()
-                .Where(m => monitorIds.Contains(m.Id))
-                .Include(m => m.Paths)
-                .ThenInclude(p => p.Measurements)
-                .ToListAsync();
-
-            var byId = monitors.ToDictionary(m => m.Id);
+            var byId = await _dashboardService.GetDashboardMonitorsByIdsLookupAsync(monitorIds);
 
             var items = new List<object>();
             foreach (var row in orderedItems)
@@ -72,55 +66,10 @@ namespace UptimeDaddy.API.Controllers
                 if (!byId.TryGetValue(row.MonitorId, out var monitor))
                     continue;
 
-                var rollup = MonitorRollupService.Compute(monitor.Paths);
-                var rollupSegments = MonitorRollupService.ComputeRollupSegments(monitor.Paths);
-
-                items.Add(new
-                {
-                    row.SortOrder,
-                    row.DisplayLabel,
-                    monitorId = monitor.Id,
-                    baseUrl = monitor.BaseUrl,
-                    intervalTime = monitor.IntervalTime,
-                    sslExpiresAt = monitor.SslExpiresAt,
-                    paths = monitor.Paths.OrderBy(p => p.Path).Select(p => new
-                    {
-                        id = p.Id,
-                        path = p.Path,
-                        displayUrl = MonitorUrlParser.DisplayUrl(monitor.BaseUrl, p.Path),
-                        measurements = p.Measurements
-                            .OrderByDescending(m => m.CreatedAt)
-                            .Take(200)
-                            .Select(m => new
-                            {
-                                m.Id,
-                                monitorPathId = m.MonitorPathId,
-                                m.StatusCode,
-                                m.DnsLookupMs,
-                                m.ConnectMs,
-                                m.TlsHandshakeMs,
-                                m.TimeToFirstByteMs,
-                                m.TotalTimeMs,
-                                m.CreatedAt,
-                                m.KeywordMatched
-                            })
-                    }),
-                rollup = new
-                {
-                    isUp = rollup.IsUp,
-                    uptimePercent = rollup.UptimePercent,
-                    latestTotalTimeMs = rollup.LatestTotalTimeMs,
-                    totalChecks = rollup.TotalChecks,
-                    segments = rollupSegments
-                }
-                });
+                items.Add(MergeBoardRow(row, monitor));
             }
 
-            var overallUp = items.Count == 0 || monitors.All(m =>
-            {
-                var r = MonitorRollupService.Compute(m.Paths);
-                return r.IsUp;
-            });
+            var overallUp = items.Count == 0 || byId.Values.All(IsMonitorUp);
 
             var recentIncidents = await _context.MonitorIncidentEvents
                 .AsNoTracking()
@@ -155,6 +104,32 @@ namespace UptimeDaddy.API.Controllers
                 items,
                 incidents = recentIncidents
             });
+        }
+
+        private static object MergeBoardRow(DashboardBoardItem row, object monitor)
+        {
+            var monitorType = monitor.GetType();
+            return new
+            {
+                row.SortOrder,
+                row.DisplayLabel,
+                monitorId = monitorType.GetProperty("id")!.GetValue(monitor),
+                baseUrl = monitorType.GetProperty("baseUrl")!.GetValue(monitor),
+                intervalTime = monitorType.GetProperty("intervalTime")!.GetValue(monitor),
+                sslExpiresAt = monitorType.GetProperty("sslExpiresAt")!.GetValue(monitor),
+                paths = monitorType.GetProperty("paths")!.GetValue(monitor),
+                rollup = monitorType.GetProperty("rollup")!.GetValue(monitor),
+            };
+        }
+
+        private static bool IsMonitorUp(object monitor)
+        {
+            var rollup = monitor.GetType().GetProperty("rollup")!.GetValue(monitor);
+            if (rollup == null)
+                return false;
+
+            var isUp = rollup.GetType().GetProperty("isUp")!.GetValue(rollup);
+            return isUp is bool up && up;
         }
     }
 }
