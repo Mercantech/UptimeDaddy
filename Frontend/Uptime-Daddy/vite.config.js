@@ -11,9 +11,24 @@ export default defineConfig({
     cssMinify: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          semantic: ['semantic-ui-react'],
+        manualChunks(id) {
+          if (
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/react-router-dom/') ||
+            id.includes('node_modules/scheduler/')
+          ) {
+            return 'vendor';
+          }
+          if (
+            id.includes('node_modules/semantic-ui-react/') ||
+            id.includes('node_modules/semantic-ui-css/')
+          ) {
+            return 'semantic';
+          }
+          if (id.includes('node_modules/recharts/')) {
+            return 'recharts';
+          }
         },
       },
     },
