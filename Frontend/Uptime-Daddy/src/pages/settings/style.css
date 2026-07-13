@@ -1,6 +1,15 @@
 .settings-page-container {
   margin-top: 7rem;
-  padding: 2rem 0;
+  padding: 2rem 1.25rem;
+  max-width: 1600px;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .settings-page-container {
+    margin-top: 5.5rem;
+    padding: 1.25rem 0.85rem 2rem;
+  }
 }
 
 .settings-page-container .settings-panel + .settings-panel {

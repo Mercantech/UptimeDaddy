@@ -9,7 +9,7 @@ const accentMap = {
 
 function Cards({ items = [] }) {
   return (
-    <Card.Group itemsPerRow={3} stackable className="cards-container">
+    <Card.Group itemsPerRow={3} stackable doubling className="cards-container">
       {items.map((item, index) => {
         const accent = accentMap[item.accent] ?? accentMap.green;
         return (

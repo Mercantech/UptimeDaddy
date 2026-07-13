@@ -179,3 +179,34 @@ color: #e8fff6;
 .credits-easter-egg-link:hover {
   color: #c5ebe0;
 }
+
+.dashboard-page.ui.container {
+  width: 100% !important;
+  max-width: 1600px !important;
+  margin: 7rem auto 0 !important;
+  padding: 2rem 1.25rem !important;
+}
+
+.cards-container.ui.cards {
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+@media (max-width: 900px) {
+  .dashboard-page.ui.container {
+    margin-top: 5.5rem !important;
+    padding: 1.25rem 0.85rem 2rem !important;
+  }
+
+  .search-website-panel__title {
+    font-size: clamp(1.35rem, 5vw, 2rem);
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-page.ui.container {
+    padding-left: 0.65rem !important;
+    padding-right: 0.65rem !important;
+  }
+}

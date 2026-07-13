@@ -212,7 +212,8 @@ export default function IncidentsPage() {
                         </Message>
                     ) : (
                         <>
-                            <Table celled striped compact unstackable>
+                            <div className="incidents-table-scroll">
+                            <Table celled striped compact className="incidents-table">
                                 <Table.Header>
                                     <Table.Row>
                                         <Table.HeaderCell>Tidspunkt</Table.HeaderCell>
@@ -261,6 +262,7 @@ export default function IncidentsPage() {
                                     ))}
                                 </Table.Body>
                             </Table>
+                            </div>
                             {totalPages > 1 ? (
                                 <div style={{ marginTop: "1rem", textAlign: "center" }}>
                                     <Pagination

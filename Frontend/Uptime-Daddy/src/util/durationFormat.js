@@ -19,3 +19,17 @@ export function formatIntervalSeconds(totalSeconds) {
   if (s > 0) parts.push(`${s} ${s === 1 ? "sekund" : "sekunder"}`);
   return parts.join(" ");
 }
+
+/** Kompakt visning til smalle tabeller (fx "1 min", "5 t"). */
+export function formatIntervalShort(totalSeconds) {
+  const n = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+  const h = Math.floor(n / 3600);
+  const m = Math.floor((n % 3600) / 60);
+  const s = n % 60;
+
+  if (h > 0 && m > 0) return `${h} t ${m} min`;
+  if (h > 0) return `${h} t`;
+  if (m > 0 && s > 0) return `${m} min ${s} s`;
+  if (m > 0) return `${m} min`;
+  return `${s} s`;
+}

@@ -99,7 +99,7 @@ function App() {
   return (
     <>
       <Navbar />
-      <Container style={{ marginTop: "7rem", padding: "2rem 0" }}>
+      <Container fluid className="dashboard-page">
         <SearchWebsite onWebsiteAdded={handleWebsiteDataChanged} />
         <Cards items={calculateCards(monitors)} />
         <Table

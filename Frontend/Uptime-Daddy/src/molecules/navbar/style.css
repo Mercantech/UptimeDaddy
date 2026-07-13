@@ -4,6 +4,16 @@
   box-shadow: none !important;
 }
 
+.app-navbar__inner.ui.container {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center !important;
+  width: 100% !important;
+  max-width: 1600px !important;
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
 .app-navbar.ui.menu .header.item {
   color: #408A71 !important;
   font-weight: 700;
@@ -13,6 +23,56 @@
 .app-navbar.ui.menu .item {
   padding-left: 0.4rem !important;
   padding-right: 0.4rem !important;
+}
+
+.app-navbar__brand {
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+}
+
+.app-navbar__logo {
+  margin-right: 0.25rem !important;
+  height: 52px !important;
+  width: auto !important;
+  flex-shrink: 0;
+}
+
+.app-navbar__title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: clamp(1.1rem, 2.5vw, 1.75rem);
+  font-weight: bold;
+  min-width: 0;
+}
+
+.app-navbar__title-accent {
+  color: #b0e4cc;
+}
+
+.app-navbar__title-main {
+  color: #e8fff6;
+}
+
+.app-navbar__toggle-item {
+  display: none !important;
+  margin-left: auto !important;
+}
+
+.app-navbar__toggle.ui.button {
+  border-color: #2f6d59 !important;
+  min-width: 2.5rem;
+}
+
+.app-navbar__links {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center !important;
+  margin-left: auto !important;
 }
 
 .app-navbar .navbar-dev-icon.ui.button {
@@ -31,4 +91,39 @@
 .app-navbar .navbar-dev-icon.ui.button .icon {
   margin: 0 !important;
   opacity: 0.85;
+}
+
+@media (max-width: 900px) {
+  .app-navbar__toggle-item {
+    display: block !important;
+  }
+
+  .app-navbar__links {
+    display: none !important;
+    flex-direction: column;
+    align-items: stretch !important;
+    width: 100%;
+    order: 3;
+    padding: 0.5rem 0 0.75rem !important;
+    border-top: 1px solid #1e3d34;
+    margin-top: 0.25rem;
+  }
+
+  .app-navbar--open .app-navbar__links {
+    display: flex !important;
+  }
+
+  .app-navbar__links .item {
+    width: 100%;
+    padding: 0.2rem 0 !important;
+  }
+
+  .app-navbar__links .ui.button {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .app-navbar__logo {
+    height: 44px !important;
+  }
 }

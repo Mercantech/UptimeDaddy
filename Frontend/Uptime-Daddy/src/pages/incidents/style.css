@@ -2,7 +2,26 @@
 
 .incidents-page-container {
   margin-top: 7rem;
-  padding: 2rem 0;
+  padding: 2rem 1.25rem;
+  max-width: 1600px;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .incidents-page-container {
+    margin-top: 5.5rem;
+    padding: 1.25rem 0.85rem 2rem;
+  }
+}
+
+.incidents-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.incidents-panel .incidents-table.ui.table {
+  min-width: 42rem;
 }
 
 .incidents-page-container .incidents-title.ui.header {
