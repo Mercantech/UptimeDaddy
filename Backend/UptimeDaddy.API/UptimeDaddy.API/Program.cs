@@ -41,6 +41,7 @@ builder.Services.AddSingleton<IEmailService>(sp =>
         sp.GetRequiredService<IOptions<EmailOptions>>(),
         sp.GetRequiredService<ILogger<SmtpEmailService>>());
 });
+builder.Services.AddSingleton<EmailTemplateRenderer>();
 builder.Services.AddScoped<MonitorStatusEmailNotifier>();
 builder.Services.AddScoped<MonitorStatusAlertService>();
 builder.Services.AddScoped<MonitorDashboardService>();
@@ -145,6 +146,8 @@ using (var scope = app.Services.CreateScope())
 
 app.UseSwagger();
 app.UseSwaggerUI();
+
+app.UseStaticFiles();
 
 app.UseRouting();
 

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>{{brandTitle}}</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td { font-family: Consolas, 'Courier New', monospace !important; }
+  </style>
+  <![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:#091413;font-family:ui-monospace,'Cascadia Code',Consolas,'Courier New',monospace;color:#e8fff6;-webkit-font-smoothing:antialiased;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">{{preheader}}</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#091413;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;">
+          <tr>
+            <td style="padding:0 0 20px 0;">
+              <table role="presentation" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:14px;">
+                    <img src="{{logoSrc}}" alt="UptimeDaddy" width="56" height="56" style="display:block;border:0;border-radius:10px;background:#0f1f1c;" />
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <p style="margin:0;font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#b0e4cc;">
+                      Uptime<span style="color:#e8fff6;">Daddy</span>
+                    </p>
+                    <p style="margin:4px 0 0;font-size:12px;color:#8fb8a8;letter-spacing:0.04em;text-transform:uppercase;">Uptime monitoring</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#0f1f1c;border:1px solid #2f6d59;border-radius:12px;padding:28px 24px;">
+              {{content}}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 8px 0;font-size:12px;line-height:1.55;color:#6d9084;text-align:center;">
+              Du modtager denne mail fordi e-mail-notifikationer er aktiveret på din UptimeDaddy-konto.
+              {{dashboardFooter}}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

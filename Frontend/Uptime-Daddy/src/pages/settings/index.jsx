@@ -28,6 +28,7 @@ function EmailSettingsPanel() {
     const accountEmail = getEmailFromPayload(authPayload);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [testing, setTesting] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [enabled, setEnabled] = useState(true);
@@ -74,6 +75,23 @@ function EmailSettingsPanel() {
         }
     }
 
+    async function handleSendTest() {
+        setTesting(true);
+        setError(null);
+        setSuccess(null);
+        try {
+            const data = await fetchCall({
+                url: `${API_URL}/email/notifications/test`,
+                method: "POST",
+            });
+            setSuccess(data?.message ?? "Testmail sendt. Tjek din indbakke.");
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Kunne ikke sende testmail.");
+        } finally {
+            setTesting(false);
+        }
+    }
+
     return (
         <Segment className="settings-panel">
             <Header as="h2" className="settings-title">
@@ -110,8 +128,16 @@ function EmailSettingsPanel() {
                     />
 
                     <div className="settings-actions">
-                        <Button type="submit" primary loading={saving} disabled={saving}>
+                        <Button type="submit" primary loading={saving} disabled={saving || testing}>
                             Gem e-mail-indstillinger
+                        </Button>
+                        <Button
+                            type="button"
+                            loading={testing}
+                            disabled={testing || saving || !configured}
+                            onClick={() => void handleSendTest()}
+                        >
+                            Send testmail
                         </Button>
                     </div>
                 </Form>

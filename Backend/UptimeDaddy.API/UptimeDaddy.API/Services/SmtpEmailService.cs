@@ -26,7 +26,21 @@ public sealed class SmtpEmailService(IOptions<EmailOptions> emailOptions, ILogge
         if (!string.IsNullOrWhiteSpace(_options.ReplyToAddress))
             mime.ReplyTo.Add(MailboxAddress.Parse(_options.ReplyToAddress));
 
-        mime.Body = new BodyBuilder { HtmlBody = message.HtmlBody }.ToMessageBody();
+        var builder = new BodyBuilder { HtmlBody = message.HtmlBody };
+
+        if (message.InlineImages is { Count: > 0 })
+        {
+            foreach (var image in message.InlineImages)
+            {
+                if (!File.Exists(image.FilePath))
+                    continue;
+
+                var resource = await builder.LinkedResources.AddAsync(image.FilePath, cancellationToken);
+                resource.ContentId = image.ContentId;
+            }
+        }
+
+        mime.Body = builder.ToMessageBody();
 
         using var client = new SmtpClient();
         await client.ConnectAsync(
