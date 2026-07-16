@@ -99,7 +99,6 @@ function EmailSettingsPanel() {
             </Header>
             <p className="settings-subtitle">
                 Modtag mail på <strong>{accountEmail}</strong> når dine monitors skifter mellem oppe og nede.
-                Kræver at SMTP er konfigureret på serveren (samme opsætning som Mercantec Auth).
             </p>
 
             {loading ? (
